@@ -1,0 +1,88 @@
+dataset:
+  name: "Diffusion_dataset"
+
+  train_dataset: ./data/data_index/deduplicated_deepcad_training_7_30.txt
+  val_dataset: ./data/data_index/deduplicated_deepcad_validation_7_30.txt 
+  test_dataset: ./data/data_index/deduplicated_deepcad_testing_7_30.txt
+
+  # data_root: D:/img2brep/deepcad_whole_test_v5
+  data_root: ./data/organized_data
+  face_z: ./outputs/0925_pure_face_z
+  deduplicate_list: 0
+  pad_method: random
+  cached_condition: true
+
+  scale_factor: 1
+  overfit: false
+  is_overfit: false
+  is_aug: 0
+  
+  length: 100
+  num_max_faces: 64
+  addition_tag: false
+
+  condition: []
+  # cond_root: D:/img2brep/deepcad_whole_test_v5
+  cond_root: ./data/organized_data
+  num_points: 10000
+  point_aug: 0
+  random_seed: 0
+
+trainer:
+  gpu: 1
+  num_worker: 0
+  batch_size: 32
+  learning_rate: 1e-4
+  check_val_every_n_epoch: 1
+  # accelerator: "16-mixed"
+  accelerator: "32-true"
+  swa: false
+
+  # Evaluation
+  evaluate: false
+  test_output_dir:
+  max_steps: -1
+  resume_from_checkpoint:
+  wandb: false
+
+  max_epochs: 10000000
+  spawn: false
+  output: .
+  exp_name: test
+
+model:
+  name: Diffusion_condition
+  train_decoder: false
+  stored_z: True
+  use_mean: true
+
+  diffusion_latent: 512
+  diffusion_type: epsilon
+  loss: l2
+  pad_method: random
+  num_max_faces: 64
+  beta_schedule: squaredcos_cap_v2
+  beta_start: 0.0001
+  beta_end: 0.02
+  variance_type: fixed_small
+  addition_tag: false
+
+  autoencoder: AutoEncoder_0925
+  with_intersection: true
+  dim_latent: 8
+  dim_shape: 768
+  sigmoid: false
+  in_channels: 3
+  gaussian_weights: 1e-6
+  norm: "layer"
+  autoencoder_weights: 
+
+  is_aug: false # Only control if point cloud is augmented
+  condition: []
+  cond_prob: []
+
+hydra:
+  run:
+    dir: ./outputs/brepnet_diffusion_log/${now:%Y-%m-%d}/${now:%H-%M-%S}
+  job:
+    chdir: False
