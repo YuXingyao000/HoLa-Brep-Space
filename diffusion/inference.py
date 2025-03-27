@@ -328,6 +328,7 @@ def inference_batch_postprocess(file_dir: Path ,output_dir: Path, num_cpus: int=
     #         is_ray=False,
     #         is_optimize_geom=False,
     #         from_scratch=True,
+    #         isdebug=True,
     #         is_save_data=True
     #         )
     
@@ -343,7 +344,8 @@ def inference_batch_postprocess(file_dir: Path ,output_dir: Path, num_cpus: int=
                 is_log=False, 
                 is_ray=True, 
                 is_optimize_geom=False, 
-                isdebug=False
+                isdebug=True,
+                is_save_data=True
             )
         )
         
@@ -360,7 +362,9 @@ def inference_batch_postprocess(file_dir: Path ,output_dir: Path, num_cpus: int=
                     # ray.kill()
         except:
             results.append(None)
-        if success_count >= 3:
+        if success_count >= 4:
+            if ray.is_initialized():
+                ray.shutdown()
             break
         else:
             success_count = 0
