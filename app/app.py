@@ -78,7 +78,7 @@ def get_model(generate_mode: str, present_mode: str, model_index: int, user_stat
         if present_mode != "Downloads":
             return gr.Model3D(label=f"{present_mode}{model_index + 1}",value='app/empty.obj',display_mode=present_mode.lower(), key=present_mode)
         else:
-            return gr.Files(label=f"Models{model_index + 1}", value=["app/sample.stl", "app/sample.ply", "app/app/sample.step"], interactive=False, key=present_mode)
+            return gr.Files(label=f"Models{model_index + 1}", value=["app/sample.stl", "app/sample.ply", "app/sample.step"], interactive=False, key=present_mode)
     else:
         if present_mode == "Wireframe":
             return gr.Model3D(label=f"{present_mode}{model_index + 1}",value=models[f'Model{model_index + 1}'][0],display_mode=present_mode.lower(), key=present_mode)
@@ -129,21 +129,7 @@ def set_present_mode(mode):
     return gr.Text(mode, visible=False)
 
 with gr.Blocks(js=force_light, theme=theme, css=custom_css) as inference:
-    # Title
-    # gr.HTML(
-    #     """
-    #     <div class="header-container">
-    #       <div>
-    #           <p id="HoLa-Icon">👋</p>
-    #       </div>
-    #       <div>
-    #           <h1>HoLa-BRep</h1>
-    #           <p>Holistic Latent Representation for B-Rep Generation</p>
-    #           <p>(Visual Computing Research Center, Shenzhen University)</p>
-    #       </div>
-    #     </div>
-    #     """
-    #     )
+
     gr.Markdown(
         """
         <style>
@@ -167,8 +153,7 @@ with gr.Blocks(js=force_light, theme=theme, css=custom_css) as inference:
         </h1>
         """
     )
-    
-    # with gr.Accordion("👋About HoLa-BRep", open=False):
+
     gr.Markdown(
             """
             # ❔What is HoLa-BRep
@@ -245,7 +230,7 @@ with gr.Blocks(js=force_light, theme=theme, css=custom_css) as inference:
                     )
                     
                 with gr.Tab("SVR") as svr_tab:
-                    svr_layout = build_layout(sketch_tab.label, user_state)
+                    svr_layout = build_layout(svr_tab.label, user_state)
                     svr_layout.get_note()
                     svr_input_components = svr_layout.get_input_components()
                     svr_button = gr.Button("Generate")
@@ -282,22 +267,24 @@ with gr.Blocks(js=force_light, theme=theme, css=custom_css) as inference:
                 with gr.Tab("Wireframe") as wireframe_tab:
                     model_wireframe.render()
                 with gr.Tab("Download") as download_tab:
-                    gr.Markdown(
-                        """
-                        # This is a title
-                        + Something here
-                        
-                        + Something here
-                        
-                        + Something here
-                        
-                        + Something here
-                        
-                        + Something here
-                        """
-                        )
                     step_file.render()
                     download_files.render()
+                    gr.Markdown(
+                        value=
+                        """
+                        <h1>📝Citation</h1>
+                        
+                        If our work is helpful for your research or applications, please cite us via:
+                        <br>
+                        ```
+                        bibtex
+                        @article{
+                            
+                        }
+                        ```
+                        """,
+                        height=300,
+                        )
             
             solid_tab.select(fn=set_present_mode, inputs=gr.Text(solid_tab.label, visible=False))
             wireframe_tab.select(fn=set_present_mode, inputs=gr.Text(wireframe_tab.label, visible=False))
@@ -315,103 +302,6 @@ with gr.Blocks(js=force_light, theme=theme, css=custom_css) as inference:
                     fn=get_next_model,
                     inputs=[generating, gr.Text(presenting, visible=False), model_index, user_state],
                     outputs=[model_index, model_wireframe, model_solid, download_files])
-            
-            # generate_mode.render()
-            # @gr.render(inputs=[generate_mode, user_state], triggers=[generate_mode.select, inference.load])
-            # def show_input(generate_mode, local_storage):
-            #     input_component = []
-            #     if generate_mode == 'Text':
-            #         gr.Info("We sincerely apologize, but we currently only support English.")
-
-                
-            #     layout = build_layout(generate_mode, user_state)
-            #     layout.get_note()
-                
-            #     with gr.Row():
-            #         input_component = layout.get_input_components()
-                
-            #     generate_button.unrender()
-            #     generate_button.render()
-            #     generate_button.click(
-            #             fn=delegate_generate_method(generate_mode, user_state), 
-            #             inputs=[*input_component, user_state],
-            #             outputs=[model_wireframe, model_solid, step_file, download_files, user_state]
-            #             )
-    
-                    
-                    
-            # with gr.Row() as switch_row:
-            #     last_button = gr.Button("Last")
-            #     next_button = gr.Button("Next")
-            #     last_button.click(
-            #         fn=get_last_model,
-            #         inputs=[generate_mode, model_num, user_state],
-            #         outputs=[model_wireframe, model_solid, download_files, model_num])
-            #     next_button.click(
-            #         fn=get_next_model,
-            #         inputs=[generate_mode, model_num, user_state],
-            #         outputs=[model_wireframe, model_solid, download_files, model_num])
-            
-        # with gr.Column() as output_col:
-        #     present_mode = gr.Radio(["Solid", "Wireframe", "Downloads"], value="Solid", label="Preview")
-        #     @gr.render(inputs=[present_mode, user_state], triggers=[inference.load, present_mode.select])
-        #     def show_output(present_mode, local_state):
-        #     # with gr.Tabs():
-        #     #     with gr.Tab("Solid"):
-        #     #         model_solid.render()
-        #     #     with gr.Tab("Wireframe"):
-        #     #         model_wireframe.render()
-        #     #     with gr.Tab("Download",):
-        #     #         step_file.render()
-        #     #         download_files.render()
-        #         if present_mode == "Solid":
-        #             model_solid.unrender()
-        #             model_solid.render()
-        #         elif present_mode == "Wireframe":
-        #             model_wireframe.unrender()
-        #             model_wireframe.render()
-        #         elif present_mode == "Downloads":
-        #             download_files.unrender()
-        #             download_files.render()
-                
-                    
-        #     with gr.Row() as switch_row:
-        #         model_num = gr.Number(value=0, visible=False)
-        #         last_button = gr.Button("Last")
-        #         next_button = gr.Button("Next")
-        #         last_button.click(
-        #             fn=get_last_model_path,
-        #             inputs=[user_state, generate_mode, model_num],
-        #             outputs=[model_num, model_wireframe, model_solid, download_files])
-        #         next_button.click(
-        #             fn=get_next_model_path,
-        #             inputs=[user_state, generate_mode, model_num],
-        #             outputs=[model_num, model_wireframe, model_solid, download_files])
-                
-            
-        # Output
-        # with gr.Column() as output_col:        
-        #     with gr.Tabs():
-        #         with gr.Tab("Solid"):
-        #             model_solid.render()
-        #         with gr.Tab("Wireframe"):
-        #             model_wireframe.render()
-        #         with gr.Tab("Download",):
-        #             step_file.render()
-        #             download_files.render()
-            
-        #     with gr.Row() as switch_row:
-        #         model_num = gr.Number(value=0, visible=False)
-        #         last_button = gr.Button("Last")
-        #         next_button = gr.Button("Next")
-        #         last_button.click(
-        #             fn=get_last_model_path,
-        #             inputs=[user_state, generate_mode, model_num],
-        #             outputs=[model_num, model_wireframe, model_solid, download_files])
-        #         next_button.click(
-        #             fn=get_next_model_path,
-        #             inputs=[user_state, generate_mode, model_num],
-        #             outputs=[model_num, model_wireframe, model_solid, download_files])
 
     @gr.render(inputs=[generating], triggers=[generating.change, inference.load])
     def show_examples(generate_mode):
@@ -430,181 +320,56 @@ with gr.Blocks(js=force_light, theme=theme, css=custom_css) as inference:
                 ]
             )
         elif generate_mode == "Text":
-            example = gr.Examples(
-                inputs=text_input_components,
-                examples=[
-                    ["A ring"],
-                    ["A box"],
-                    ["A cat"]
-                    ]
+            text_data = gr.Dataset(
+                components=text_input_components,
+                samples=[
+                    ["A ball"],
+                    ["A cat"],
+                    ["A wheel"]
+                    ],
+                layout='table',
+                label="Examples",
+                headers=["Prompt1"]
             )
+            def dummy_func(text):
+                return gr.Text(text[0])
+            text_data.click(fn=dummy_func, inputs=text_data, outputs=text_input_components)
         elif generate_mode == "Sketch":
-            example = gr.Examples(
-                inputs=sketch_input_components,
-                examples=[
-                    ["app/s2.png"], ["app/s3.png"]
-                    ]
-            )
+            with gr.Row():
+                for i in range(12):
+                    with gr.Column(min_width=100):
+                        example = gr.Examples(
+                            inputs=sketch_input_components,
+                            examples=[
+                                [f"app/{i+1}.png"]
+                                ],
+                            label=f"{i+1}"
+                            )
         elif generate_mode == "SVR":
-            with gr.Row(variant="panel"):
-                with gr.Column(min_width=100):
-                    example = gr.Examples(
-                        inputs=svr_input_components,
-                        examples=[
-                            ["app/s1.png"]
-                            ],
-                        label=""
-                        )
-                with gr.Column(min_width=100):
-                    example = gr.Examples(
-                        inputs=svr_input_components,
-                        examples=[
-                            ["app/s2.png"]
-                            ],
-                        label=""
-                        )
-                with gr.Column(min_width=100):
-                    example = gr.Examples(
-                        inputs=svr_input_components,
-                        examples=[
-                            ["app/s3.png"]
-                            ],
-                        label=""
-                        )
-                with gr.Column(min_width=100):
-                    example = gr.Examples(
-                        inputs=svr_input_components,
-                        examples=[
-                            ["app/s1.png"]
-                            ],
-                        label=""
-                        )
-                with gr.Column(min_width=100):
-                    example = gr.Examples(
-                        inputs=svr_input_components,
-                        examples=[
-                            ["app/s2.png"]
-                            ],
-                        label=""
-                        )
-                with gr.Column(min_width=100):
-                    example = gr.Examples(
-                        inputs=svr_input_components,
-                        examples=[
-                            ["app/s3.png"]
-                            ],
-                        label=""
-                        )
-                with gr.Column(min_width=100):
-                    example = gr.Examples(
-                        inputs=svr_input_components,
-                        examples=[
-                            ["app/s1.png"]
-                            ],
-                        label=""
-                        )
-                with gr.Column(min_width=100):
-                    example = gr.Examples(
-                        inputs=svr_input_components,
-                        examples=[
-                            ["app/s2.png"]
-                            ],
-                        label=""
-                        )
-                with gr.Column(min_width=100):
-                    example = gr.Examples(
-                        inputs=svr_input_components,
-                        examples=[
-                            ["app/s3.png"]
-                            ],
-                        label=""
-                        )
-                with gr.Column(min_width=100):
-                    example = gr.Examples(
-                        inputs=svr_input_components,
-                        examples=[
-                            ["app/s3.png"]
-                            ],
-                        label=""
-                        )
-                with gr.Column(min_width=100):
-                    example = gr.Examples(
-                        inputs=svr_input_components,
-                        examples=[
-                            ["app/s3.png"]
-                            ],
-                        label=""
-                        )
-                with gr.Column(min_width=100):
-                    example = gr.Examples(
-                        inputs=svr_input_components,
-                        examples=[
-                            ["app/s3.png"]
-                            ],
-                        label=""
-                        )
-                with gr.Column(min_width=100):
-                    example = gr.Examples(
-                        inputs=svr_input_components,
-                        examples=[
-                            ["app/s3.png"]
-                            ],
-                        label=""
-                        )
-                with gr.Column(min_width=100):
-                    example = gr.Examples(
-                        inputs=svr_input_components,
-                        examples=[
-                            ["app/s3.png"]
-                            ],
-                        label=""
-                        )
-                with gr.Column(min_width=100):
-                    example = gr.Examples(
-                        inputs=svr_input_components,
-                        examples=[
-                            ["app/s3.png"]
-                            ],
-                        label=""
-                        )
+            with gr.Row():
+                for i in range(16):
+                    with gr.Column(min_width=100):
+                        example = gr.Examples(
+                            inputs=svr_input_components,
+                            examples=[
+                                [f"app/{i % 10 + 1}.png"]
+                                ],
+                            label=f"{i+1}"
+                            )
+                
                 
         elif generate_mode == "MVR":
             with gr.Row():
-                with gr.Column():
-                    example = gr.Examples(
-                        inputs=mvr_input_components,
-                        examples=[
-                            ["app/s1.png", "app/s2.png", "app/s3.png"]
-                            ]
-                    )
-                with gr.Column():
-                    example = gr.Examples(
-                        inputs=mvr_input_components,
-                        examples=[
-                            ["app/s1.png", "app/s1.png", "app/s1.png"]
-                            ]
-                    )
-                with gr.Column():
-                    example = gr.Examples(
-                        inputs=mvr_input_components,
-                        examples=[
-                            ["app/s1.png", "app/s2.png", "app/s3.png"]
-                            ]
-                    )
-                with gr.Column():
-                    example = gr.Examples(
-                        inputs=mvr_input_components,
-                        examples=[
-                            ["app/s1.png", "app/s2.png", "app/s3.png"]
-                            ]
-                    )
-                with gr.Column():
-                    example = gr.Examples(
-                        inputs=mvr_input_components,
-                        examples=[
-                            ["app/s1.png", "app/app/s2.png", "app/s3.png"]
-                            ]
-                    )
+                for i in range(5):
+                    with gr.Column():
+                        example = gr.Examples(
+                            inputs=mvr_input_components,
+                            examples=[
+                                ["app/1.png", "app/2.png", "app/3.png"]
+                                ],
+                            label=f"{i+1}"
+                        )
+
                 
             
     gr.HTML(
