@@ -100,9 +100,6 @@ class PCLayout(AppLayout):
             gr.File(
                 label='PC',
                 file_count='single', 
-                file_types=['.ply'], 
-                interactive=True, 
-                allow_reordering=True
             ),
         ]
 

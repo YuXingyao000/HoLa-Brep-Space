@@ -1,5 +1,5 @@
 import gradio as gr
-import os
+from pathlib import Path
 from app.app_layout import AppLayout, build_layout
 from app.generate_method import delegate_generate_method
 
@@ -308,17 +308,25 @@ with gr.Blocks(js=force_light, theme=theme, css=custom_css) as inference:
         if generate_mode == "Unconditional":
             pass
         elif generate_mode == "Point Cloud":
-            example = gr.Examples(
-                inputs=pc_input_components,
-                examples=[
-                    [r"D:\HoLa-Brep\data\to_upload\organized_data\00000061\pc.ply",],
-                    [r"D:\HoLa-Brep\data\to_upload\organized_data\00000070\pc.ply",],
-                    [r"D:\HoLa-Brep\data\to_upload\organized_data\00000093\pc.ply",],
-                    [r"D:\HoLa-Brep\data\to_upload\organized_data\00000168\pc.ply",],
-                    [r"D:\HoLa-Brep\data\to_upload\organized_data\00000178\pc.ply",],
-                    [r"D:\HoLa-Brep\data\to_upload\organized_data\00000329\pc.ply",],
-                ]
-            )
+            pc_samples=[
+                            ["app/pc_samples/00000061/pc.png"],
+                            ["app/pc_samples/00000070/pc.png"],
+                            ["app/pc_samples/00000178/pc.png"],
+                            ["app/pc_samples/00000329/pc.png"],
+                        ]
+            with gr.Row():
+                def dummy_pc_func(pic_path):
+                    return Path(pic_path[0]).with_suffix(".ply").as_posix()
+                for i in range(4):
+                    with gr.Column():
+                        dummy_image = gr.Image(type="filepath", format="png", visible=False)
+                        point_cloud_data = gr.Dataset(
+                            label="Examples",
+                            components=[dummy_image],
+                            samples=[pc_samples[i]],
+                            layout="table"
+                        )
+                        point_cloud_data.click(dummy_pc_func, inputs=point_cloud_data, outputs=pc_input_components)
         elif generate_mode == "Text":
             text_data = gr.Dataset(
                 components=text_input_components,
@@ -341,7 +349,7 @@ with gr.Blocks(js=force_light, theme=theme, css=custom_css) as inference:
                         example = gr.Examples(
                             inputs=sketch_input_components,
                             examples=[
-                                [f"app/{i+1}.png"]
+                                [f"app/{i % 10 + 1}.png"]
                                 ],
                             label=f"{i+1}"
                             )
@@ -382,4 +390,4 @@ with gr.Blocks(js=force_light, theme=theme, css=custom_css) as inference:
     )
 
 if __name__ == "__main__":
-    inference.launch(allowed_paths=[r'D:\HoLa-Brep\data\to_upload\organized_data'])
+    inference.launch(share=True)
