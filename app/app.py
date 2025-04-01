@@ -1,5 +1,6 @@
 import gradio as gr
 from pathlib import Path
+import os
 from app.app_layout import AppLayout, build_layout
 from app.generate_method import delegate_generate_method
 
@@ -355,7 +356,7 @@ with gr.Blocks(js=force_light, theme=theme, css=custom_css) as inference:
                             )
         elif generate_mode == "SVR":
             with gr.Row():
-                for i in range(16):
+                for i in range(15):
                     with gr.Column(min_width=100):
                         example = gr.Examples(
                             inputs=svr_input_components,
@@ -369,11 +370,12 @@ with gr.Blocks(js=force_light, theme=theme, css=custom_css) as inference:
         elif generate_mode == "MVR":
             with gr.Row():
                 for i in range(5):
+                    file_num = ["00000093", "00017091", "00018543", "00219891", "00339204"]
                     with gr.Column():
                         example = gr.Examples(
                             inputs=mvr_input_components,
                             examples=[
-                                ["app/1.png", "app/2.png", "app/3.png"]
+                                [f"app/mvr_samples/{file_num[i]}_img0.png", f"app/mvr_samples/{file_num[i]}_img2.png", f"app/mvr_samples/{file_num[i]}_img2.png"], 
                                 ],
                             label=f"{i+1}"
                         )
@@ -390,4 +392,4 @@ with gr.Blocks(js=force_light, theme=theme, css=custom_css) as inference:
     )
 
 if __name__ == "__main__":
-    inference.launch(share=True)
+    inference.launch(server_name="0.0.0.0", server_port=7860)

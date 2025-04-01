@@ -107,7 +107,7 @@ def conditioned_generate(files: list, condition: str, generate_output:Path | str
             file_dir=generate_output, 
             output_dir=postprocess_output, 
             num_cpus=2,
-            drop_num=0,
+            drop_num=1,
             timeout=60
             )
     except:
@@ -247,23 +247,27 @@ class UncondGenerateMethod(GenerateMethod):
 class PCGenerateMethod(GenerateMethod):
     def get_generate_method(self):
         def generate_pc(file, state: gr.BrowserState):
-            # try:
-                generate_output, postprocess_output, state = get_output_pathes(state, 'pc')
-                state = conditioned_generate([file], 'pc', generate_output, postprocess_output, state)
-                if 'Model1' in state['Point Cloud'].keys():
-                    return *state['Point Cloud']['Model1'], state['Point Cloud']['Model1'], state
-                else:
+            if file is None:
+                return gr.Model3D(), gr.Model3D(), gr.File(), gr.Files(), state
+            else:
+                try:
+                    generate_output, postprocess_output, state = get_output_pathes(state, 'pc')
+                    state = conditioned_generate([file], 'pc', generate_output, postprocess_output, state)
+                    if 'Model1' in state['Point Cloud'].keys():
+                        return *state['Point Cloud']['Model1'], state['Point Cloud']['Model1'], state
+                    else:
+                        return gr.Model3D(), gr.Model3D(), gr.File(), gr.Files(), state
+                except:
+                    gr.Warning("Something bad happened. Please try some other models", title="Unknown Error")
                     return gr.Model3D(), gr.Model3D(), gr.File(), gr.Files(), state
-            # except:
-            #     gr.Warning("Something bad happened. Please try some other models", title="Unknown Error")
-            #     return gr.Model3D(), gr.Model3D(), gr.File(), gr.Model3D(), gr.Model3D(), gr.File(), gr.Model3D(), gr.Model3D(), gr.File(), state
-                
         return generate_pc
      
      
 class TxtGenerateMethod(GenerateMethod):
     def get_generate_method(self):
         def generate_txt(description, state: gr.BrowserState):
+            if description is None or description == "":
+                return gr.Model3D(), gr.Model3D(), gr.File(), gr.Files(), state
             try:
                 generate_output, postprocess_output, state = get_output_pathes(state, 'txt')
                 os.makedirs(Path(state['user_output_dir']) / 'tmp', exist_ok=True)
@@ -285,11 +289,12 @@ class TxtGenerateMethod(GenerateMethod):
 class SketchGenerateMethod(GenerateMethod):
     def get_generate_method(self):
         def generate_sketch(file, state: gr.BrowserState):
+            if file is None:
+                return gr.Model3D(), gr.Model3D(), gr.File(), gr.Files(), state
             try:
                 generate_output, postprocess_output, state = get_output_pathes(state, 'sketch')
                 state = conditioned_generate([Path(file)], 'sketch', generate_output, postprocess_output, state)
             except Exception as e:
-                print(e)
                 gr.Warning("Something bad happened. Please try some other models", title="Unknown Error")
             if 'Model1' in state['Sketch'].keys():
                 return *state['Sketch']['Model1'], state['Sketch']['Model1'], state
@@ -301,6 +306,8 @@ class SketchGenerateMethod(GenerateMethod):
 class SVRGenerateMethod(GenerateMethod):
     def get_generate_method(self):
         def generate_svr(img, state: gr.BrowserState):
+            if img is None:
+                return gr.Model3D(), gr.Model3D(), gr.File(), gr.Files(), state
             try:
                 generate_output, postprocess_output, state = get_output_pathes(state, 'svr')
                 state = conditioned_generate([Path(img)], 'svr', generate_output, postprocess_output, state)
@@ -317,6 +324,8 @@ class SVRGenerateMethod(GenerateMethod):
 class MVRGenerateMethod(GenerateMethod):
     def get_generate_method(self):
         def generate_mvr(img1, img2, img3, state: gr.BrowserState):
+            if img1 is None or img2 is None or img3 is None:
+                return gr.Model3D(), gr.Model3D(), gr.File(), gr.Files(), state
             try:
                 generate_output, postprocess_output, state = get_output_pathes(state, 'mvr')
                 state = conditioned_generate([Path(img1), Path(img2), Path(img3)], 'mvr', generate_output, postprocess_output, state)

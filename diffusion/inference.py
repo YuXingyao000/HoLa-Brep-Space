@@ -28,24 +28,29 @@ class DataProcessor():
     def __init__(self):
         self._device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    def data_preprocess(self, condition: str, file_path: Path | str):
+    def data_preprocess(self, condition: str, files: list):
         data = {
             "conditions": {}
         }
 
         # Point-cloud-conditioned
         if condition == "pc":
-            points_tensor = self.__get_point_cloud_tensor(Path(file_path))
+            points_tensor = self.__get_point_cloud_tensor(Path(files[0]))
             data["conditions"]["points"] = points_tensor[None, None, :, :].repeat(self.NUM_PROPOSALS, 1, 1, 1)
         # Text-conditioned
         elif condition == "txt":
-            with open(file_path, 'r') as f:
+            with open(Path(files[0]), 'r') as f:
                 data["conditions"]["txt"] = [f.read()] * self.NUM_PROPOSALS
         # Imgae-conditioned
         elif condition == "sketch" or condition == "svr" or condition == "mvr":
-            img = self.__get_img_tensor(file_path)
-            data["conditions"]["imgs"] = img
-            data["conditions"]["img_id"] = torch.tensor([[0]], device=self._device).repeat(self.NUM_PROPOSALS, 1)
+            data["conditions"]["imgs"] = None
+            for file_path in files:            
+                img = self.__get_img_tensor(Path(file_path))
+                if data["conditions"]["imgs"] is None:
+                    data["conditions"]["imgs"] = img
+                else:
+                    data["conditions"]["imgs"] = torch.cat((data["conditions"]["imgs"], img), axis=1)
+            data["conditions"]["img_id"] = torch.tensor([list(range(len(files)))], device=self._device).repeat(self.NUM_PROPOSALS, 1)
         
         return data
         
@@ -132,7 +137,8 @@ class InferenceModelBuilder():
         
     def setup_condition(self, condition: list[str] | str):
         if isinstance(condition, str):
-            condition = [condition]
+            if condition == "svr" or condition == "mvr":
+                condition = ["single_img" if condition == "svr" else "multi_img"]
             self._config["condition"] += condition
         else:
             self._config["condition"] += condition
@@ -285,24 +291,24 @@ def inference(condition: str, input_files: list[Path | str], output_path: Path, 
     #     with open(file, 'r') as f:
     #         print(f.readlines())
             
-    for file_index, file_path in enumerate(tqdm(input_files)):
-        data = DataProcessor().data_preprocess(condition, Path(file_path).as_posix())
-        with torch.no_grad():
-            pred_results = model.inference(DataProcessor.NUM_PROPOSALS, device, v_data=data, v_log=True)
-        for i, result in enumerate(pred_results):
-            output_dir = output_path / f"{file_index:02d}_{i:02d}"
-            output_dir.mkdir(parents=True, exist_ok=True)
-            
-            export_edges(result["pred_edge"], (output_dir / "edge.obj").as_posix())
-            
-            np.savez_compressed(
-                file                        = (output_dir / "data.npz").as_posix(),
-                pred_face_adj_prob          = result["pred_face_adj_prob"],
-                pred_face_adj               = result["pred_face_adj"].cpu().numpy(),
-                pred_face                   = result["pred_face"],
-                pred_edge                   = result["pred_edge"],
-                pred_edge_face_connectivity = result["pred_edge_face_connectivity"],
-            )
+    
+    data = DataProcessor().data_preprocess(condition, input_files)
+    with torch.no_grad():
+        pred_results = model.inference(DataProcessor.NUM_PROPOSALS, device, v_data=data, v_log=True)
+    for i, result in enumerate(pred_results):
+        output_dir = output_path / f"00_{i:02d}"
+        output_dir.mkdir(parents=True, exist_ok=True)
+        
+        export_edges(result["pred_edge"], (output_dir / "edge.obj").as_posix())
+        
+        np.savez_compressed(
+            file                        = (output_dir / "data.npz").as_posix(),
+            pred_face_adj_prob          = result["pred_face_adj_prob"],
+            pred_face_adj               = result["pred_face_adj"].cpu().numpy(),
+            pred_face                   = result["pred_face"],
+            pred_edge                   = result["pred_edge"],
+            pred_edge_face_connectivity = result["pred_edge_face_connectivity"],
+        )
 
 def inference_batch_postprocess(file_dir: Path ,output_dir: Path, num_cpus: int=4, drop_num: int=2, timeout: int=60):
     print("Start post processing")
