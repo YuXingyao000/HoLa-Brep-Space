@@ -6,8 +6,8 @@ channels:
   - defaults
 dependencies:
   - python=3.10
-  - pip
-  - numpy
+  - pip=24.3.1
+  - numpy=2.2.2
   - pythonocc-core==7.8.1
   - pytorch==2.4.1
   - torchvision==0.19.1
@@ -17,8 +17,8 @@ dependencies:
       - huggingface-hub==0.28.1
       - datasets==3.3.1
       - sentence-transformers==3.3.1
-      - iopath
-      - lmdb
+      - iopath==0.1.10
+      - lmdb==1.6.2
       - wandb==0.19.3
       - point_cloud_utils==0.31.0
       - chamferdist==1.0.3
@@ -37,6 +37,7 @@ dependencies:
       - open3d==0.19.0
       - pytorch-lightning==2.5.0.post0
       - torch_geometric==2.6.1
+      - pydantic<=2.10.6
       - pyg_lib==0.4.0+pt24cu124
       - torch_scatter==2.1.2+pt24cu124
       - torch_sparse==0.6.18+pt24cu124
@@ -45,4 +46,4 @@ dependencies:
       - -f https://data.pyg.org/whl/torch-2.4.1+cu124.html
       - git+https://github.com/facebookresearch/pytorch3d.git@stable
       - git+https://github.com/otaheri/chamfer_distance
-      - ./pointnet2_ops_lib/.
+

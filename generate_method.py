@@ -323,12 +323,12 @@ class SVRGenerateMethod(GenerateMethod):
     
 class MVRGenerateMethod(GenerateMethod):
     def get_generate_method(self):
-        def generate_mvr(img1, img2, img3, state: gr.BrowserState):
+        def generate_mvr(img1, img2, img3, img4, state: gr.BrowserState):
             if img1 is None or img2 is None or img3 is None:
                 return gr.Model3D(), gr.Model3D(), gr.File(), gr.Files(), state
             try:
                 generate_output, postprocess_output, state = get_output_pathes(state, 'mvr')
-                state = conditioned_generate([Path(img1), Path(img2), Path(img3)], 'mvr', generate_output, postprocess_output, state)
+                state = conditioned_generate([Path(img1), Path(img2), Path(img3), Path(img4)], 'mvr', generate_output, postprocess_output, state)
             except:
                 gr.Warning("Something bad happened. Please try some other models", title="Unknown Error")
             if 'Model1' in state['MVR'].keys():

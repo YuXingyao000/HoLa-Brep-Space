@@ -1,8 +1,8 @@
 import gradio as gr
 from pathlib import Path
 import os
-from app.app_layout import AppLayout, build_layout
-from app.generate_method import delegate_generate_method
+from app_layout import AppLayout, build_layout
+from generate_method import delegate_generate_method
 
 # Theme
 theme = gr.themes.Soft(
@@ -77,9 +77,9 @@ def get_model(generate_mode: str, present_mode: str, model_index: int, user_stat
     models: dict = user_state[generate_mode]
     if f"Model{model_index + 1}" not in models.keys():
         if present_mode != "Downloads":
-            return gr.Model3D(label=f"{present_mode}{model_index + 1}",value='app/empty.obj',display_mode=present_mode.lower(), key=present_mode)
+            return gr.Model3D(label=f"{present_mode}{model_index + 1}",value='empty.obj',display_mode=present_mode.lower(), key=present_mode)
         else:
-            return gr.Files(label=f"Models{model_index + 1}", value=["app/sample.stl", "app/sample.ply", "app/sample.step"], interactive=False, key=present_mode)
+            return gr.Files(label=f"Models{model_index + 1}", value=["sample.stl", "sample.ply", "sample.step"], interactive=False, key=present_mode)
     else:
         if present_mode == "Wireframe":
             return gr.Model3D(label=f"{present_mode}{model_index + 1}",value=models[f'Model{model_index + 1}'][0],display_mode=present_mode.lower(), key=present_mode)
@@ -105,10 +105,10 @@ def get_next_model(generate_mode: str, present_mode: str,  model_index: int, use
 # generate_mode = gr.Radio(['Unconditional', 'Point Cloud', 'Sketch', 'Text', 'SVR', 'MVR'], type='value', value="Unconditional", label="Choose a generating method")
 # present_mode = gr.Radio(['Wireframe', 'Solid', 'Downloads'], type='value', value="Solid", label="Preview:")
 # generate_button = gr.Button("Generate")
-model_solid = gr.Model3D(label=f'Solid1', value='app/empty.obj', key="Solid")
-model_wireframe = gr.Model3D(label=f'Wireframe1', value='app/empty.obj', key="Wireframe")
+model_solid = gr.Model3D(label=f'Solid1', value='empty.obj', key="Solid")
+model_wireframe = gr.Model3D(label=f'Wireframe1', value='empty.obj', key="Wireframe")
 step_file = gr.File(label=f'Step', file_count='single', file_types=['.step'], interactive=False, visible=False)
-download_files = gr.Files(label=f"Models1", value=["app/sample.stl", "app/sample.ply", "app/sample.step"], interactive=False, key="Downloads")
+download_files = gr.Files(label=f"Models1", value=["sample.stl", "sample.ply", "sample.step"], interactive=False, key="Downloads")
 
 input_tab = gr.Tabs()
 
@@ -310,10 +310,10 @@ with gr.Blocks(js=force_light, theme=theme, css=custom_css) as inference:
             pass
         elif generate_mode == "Point Cloud":
             pc_samples=[
-                            ["app/pc_samples/00000061/pc.png"],
-                            ["app/pc_samples/00000070/pc.png"],
-                            ["app/pc_samples/00000178/pc.png"],
-                            ["app/pc_samples/00000329/pc.png"],
+                            ["pc_samples/00000061/pc.png"],
+                            ["pc_samples/00000070/pc.png"],
+                            ["pc_samples/00000178/pc.png"],
+                            ["pc_samples/00000329/pc.png"],
                         ]
             with gr.Row():
                 def dummy_pc_func(pic_path):
@@ -350,7 +350,7 @@ with gr.Blocks(js=force_light, theme=theme, css=custom_css) as inference:
                         example = gr.Examples(
                             inputs=sketch_input_components,
                             examples=[
-                                [f"app/{i % 10 + 1}.png"]
+                                [f"{i % 10 + 1}.png"]
                                 ],
                             label=f"{i+1}"
                             )
@@ -361,7 +361,7 @@ with gr.Blocks(js=force_light, theme=theme, css=custom_css) as inference:
                         example = gr.Examples(
                             inputs=svr_input_components,
                             examples=[
-                                [f"app/{i % 10 + 1}.png"]
+                                [f"{i % 10 + 1}.png"]
                                 ],
                             label=f"{i+1}"
                             )
@@ -370,12 +370,12 @@ with gr.Blocks(js=force_light, theme=theme, css=custom_css) as inference:
         elif generate_mode == "MVR":
             with gr.Row():
                 for i in range(5):
-                    file_num = ["00000093", "00017091", "00018543", "00219891", "00339204"]
+                    file_num = ["00000093", "00033625", "00052220", "00087329"]
                     with gr.Column():
                         example = gr.Examples(
                             inputs=mvr_input_components,
                             examples=[
-                                [f"app/mvr_samples/{file_num[i]}_img0.png", f"app/mvr_samples/{file_num[i]}_img2.png", f"app/mvr_samples/{file_num[i]}_img2.png"], 
+                                [f"mvr_samples/{file_num[i]}_img0.png", f"mvr_samples/{file_num[i]}_img2.png", f"mvr_samples/{file_num[i]}_img2.png", f"mvr_samples/{file_num[i]}_img3.png"], 
                                 ],
                             label=f"{i+1}"
                         )
@@ -392,4 +392,4 @@ with gr.Blocks(js=force_light, theme=theme, css=custom_css) as inference:
     )
 
 if __name__ == "__main__":
-    inference.launch(server_name="0.0.0.0", server_port=7860)
+    inference.launch(share=True)

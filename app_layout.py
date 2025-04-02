@@ -194,4 +194,12 @@ class MVRLayout(AppLayout):
                 sources=["upload"]
 
             ),
+            
+            gr.Image(
+                label='View4',
+                type='filepath', 
+                interactive=True, 
+                sources=["upload"]
+
+            ),
         ]

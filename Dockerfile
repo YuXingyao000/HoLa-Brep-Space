@@ -49,7 +49,7 @@ ARG TORCH_CUDA_ARCH_LIST="5.0;5.2;6.0;6.1;7.0;7.5+PTX"
 
 # Setup working directory
 COPY --chown=user ./environment.yml $HOME/HoLa-Brep/environment.yml
-COPY --chown=user ./requirements.txt $HOME/HoLa-Brep/requirements.txt
+# COPY --chown=user ./requirements.txt $HOME/HoLa-Brep/requirements.txt
 COPY --chown=user ./pointnet2_ops_lib $HOME/HoLa-Brep/pointnet2_ops_lib
 RUN chown -R user:user $HOME/HoLa-Brep
 
@@ -59,10 +59,10 @@ RUN conda env create -f $HOME/HoLa-Brep/environment.yml
 # has no permission to read the ENV of the container on HuggingFace.
 RUN conda run -n HoLa-Brep bash -c "echo 'export CUDA_HOME=/usr/local/cuda-12.4' >> ~/.bashrc"
 RUN conda run -n HoLa-Brep bash -c "echo 'export LD_LIBRARY_PATH=/usr/local/cuda-12.4/lib64:\$LD_LIBRARY_PATH' >> ~/.bashrc"
-RUN conda run -n HoLa-Brep pip install torch==2.4.1 torchvision==0.19.1 torchaudio==2.4.1 --index-url https://download.pytorch.org/whl/cu124
-RUN conda run -n HoLa-Brep pip install -r ./requirements.txt
-
+# RUN conda run -n HoLa-Brep pip install torch==2.4.1 torchvision==0.19.1 torchaudio==2.4.1 --index-url https://download.pytorch.org/whl/cu124
+RUN conda run -n HoLa-Brep pip install ./pointnet2_ops_lib/.
+RUN conda env export -n HoLa-Brep
 # Change then ownership
 COPY --chown=user . $HOME/HoLa-Brep
 
-CMD ["conda", "run", "--prefix", "/home/user/.conda/envs/HoLa-Brep", "python","-m", "app.app"]
+CMD ["conda", "run", "--prefix", "/home/user/.conda/envs/HoLa-Brep", "python", "app.py"]
