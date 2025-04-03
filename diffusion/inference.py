@@ -42,7 +42,12 @@ class DataProcessor():
             with open(Path(files[0]), 'r') as f:
                 data["conditions"]["txt"] = [f.read()] * self.NUM_PROPOSALS
         # Imgae-conditioned
-        elif condition == "sketch" or condition == "svr" or condition == "mvr":
+        elif condition == "sketch" or condition == "svr":
+            data["conditions"]["imgs"] = None
+            img = self.__get_img_tensor(Path(files[0]))
+            data["conditions"]["imgs"] = img
+            data["conditions"]["img_id"] = torch.tensor([[0]], device=self._device).repeat(self.NUM_PROPOSALS, 1)
+        elif condition == "mvr":
             data["conditions"]["imgs"] = None
             for file_path in files:            
                 img = self.__get_img_tensor(Path(file_path))
@@ -50,8 +55,8 @@ class DataProcessor():
                     data["conditions"]["imgs"] = img
                 else:
                     data["conditions"]["imgs"] = torch.cat((data["conditions"]["imgs"], img), axis=1)
-            data["conditions"]["img_id"] = torch.tensor([list(range(len(files)))], device=self._device).repeat(self.NUM_PROPOSALS, 1)
-        
+            data["conditions"]["img_id"] = torch.tensor([[0, 1, 2, 3]], device=self._device).repeat(self.NUM_PROPOSALS, 1)
+
         return data
         
     def __get_img_tensor(self, input_file: Path | str) -> torch.Tensor:
@@ -138,8 +143,8 @@ class InferenceModelBuilder():
     def setup_condition(self, condition: list[str] | str):
         if isinstance(condition, str):
             if condition == "svr" or condition == "mvr":
-                condition = ["single_img" if condition == "svr" else "multi_img"]
-            self._config["condition"] += condition
+                condition = "single_img" if condition == "svr" else "multi_img"
+            self._config["condition"] = [condition]
         else:
             self._config["condition"] += condition
        
@@ -161,17 +166,17 @@ class InferenceModelBuilder():
             
         model = Diffusion_condition(self._config)
         
-        repo_id = Path(self._config["diffusion_weights"]).parent.as_posix()
-        model_name = Path(self._config["diffusion_weights"]).name
-        model_weights = hf_hub_download(repo_id=repo_id, filename=model_name)
-        diffusion_weights = torch.load(model_weights, map_location=device, weights_only=False)["state_dict"]
+        # repo_id = Path(self._config["diffusion_weights"]).parent.as_posix()
+        # model_name = Path(self._config["diffusion_weights"]).name
+        # model_weights = hf_hub_download(repo_id=repo_id, filename=model_name)
+        diffusion_weights = torch.load(self._config["diffusion_weights"], map_location=device, weights_only=False)["state_dict"]
         diffusion_weights = {k: v for k, v in diffusion_weights.items() if "ae_model" not in k}
         diffusion_weights = {k[6:]: v for k, v in diffusion_weights.items() if "model" in k}
         
-        AE_repo_id = Path(self._config["autoencoder_weights"]).parent.as_posix()
-        AE_model_name = Path(self._config["autoencoder_weights"]).name
-        AE_model_weights = hf_hub_download(repo_id=AE_repo_id, filename=AE_model_name)
-        autoencoder_weights = torch.load(AE_model_weights, map_location=device, weights_only=False)["state_dict"]
+        # AE_repo_id = Path(self._config["autoencoder_weights"]).parent.as_posix()
+        # AE_model_name = Path(self._config["autoencoder_weights"]).name
+        # AE_model_weights = hf_hub_download(repo_id=AE_repo_id, filename=AE_model_name)
+        autoencoder_weights = torch.load(self._config["autoencoder_weights"], map_location=device, weights_only=False)["state_dict"]
         autoencoder_weights = {k[6:]: v for k, v in autoencoder_weights.items() if "model" in k}
         autoencoder_weights = {"ae_model."+k: v for k, v in autoencoder_weights.items()}
         
@@ -411,7 +416,6 @@ def inference_batch_postprocess(file_dir: Path ,output_dir: Path, num_cpus: int=
 #         points_tensor = get_point_cloud_tensor(device, PC_NUM_SAMPLE, input_file)
 #         data["conditions"]["points"] = points_tensor[None, None, :, :].repeat(NUM_PROPOSALS, 1, 1, 1)
 #     elif "txt" in config["condition"]:
-#         # 何意啊这个fileitem
 #         data["conditions"]["txt"] = [fileitem for item in range(NUM_PROPOSALS)]
 #     elif "sketch" in config["condition"] or "svr" in config["condition"] or "mvr" in config["condition"]:
 #         transform = T.Compose([

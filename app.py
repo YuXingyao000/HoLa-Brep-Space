@@ -310,16 +310,13 @@ with gr.Blocks(js=force_light, theme=theme, css=custom_css) as inference:
             pass
         elif generate_mode == "Point Cloud":
             pc_samples=[
-                            ["pc_samples/00000061/pc.png"],
-                            ["pc_samples/00000070/pc.png"],
-                            ["pc_samples/00000178/pc.png"],
-                            ["pc_samples/00000329/pc.png"],
+                            [Path("pc_samples") / sample_number / "pc.png"] for sample_number in os.listdir("pc_samples") if sample_number != "take_photo.py"
                         ]
             with gr.Row():
                 def dummy_pc_func(pic_path):
                     return Path(pic_path[0]).with_suffix(".ply").as_posix()
-                for i in range(4):
-                    with gr.Column():
+                for i in range(len(pc_samples)):
+                    with gr.Column(min_width=100):
                         dummy_image = gr.Image(type="filepath", format="png", visible=False)
                         point_cloud_data = gr.Dataset(
                             label="Examples",
@@ -369,13 +366,13 @@ with gr.Blocks(js=force_light, theme=theme, css=custom_css) as inference:
                 
         elif generate_mode == "MVR":
             with gr.Row():
-                for i in range(5):
+                for i in range(4):
                     file_num = ["00000093", "00033625", "00052220", "00087329"]
                     with gr.Column():
                         example = gr.Examples(
                             inputs=mvr_input_components,
                             examples=[
-                                [f"mvr_samples/{file_num[i]}_img0.png", f"mvr_samples/{file_num[i]}_img2.png", f"mvr_samples/{file_num[i]}_img2.png", f"mvr_samples/{file_num[i]}_img3.png"], 
+                                [f"mvr_samples/{file_num[i]}_img0.png", f"mvr_samples/{file_num[i]}_img1.png", f"mvr_samples/{file_num[i]}_img2.png", f"mvr_samples/{file_num[i]}_img3.png"], 
                                 ],
                             label=f"{i+1}"
                         )
@@ -392,4 +389,4 @@ with gr.Blocks(js=force_light, theme=theme, css=custom_css) as inference:
     )
 
 if __name__ == "__main__":
-    inference.launch(share=True)
+    inference.launch(server_name="0.0.0.0", server_port=7860, share=True)

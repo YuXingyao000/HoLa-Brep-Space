@@ -46,4 +46,5 @@ dependencies:
       - -f https://data.pyg.org/whl/torch-2.4.1+cu124.html
       - git+https://github.com/facebookresearch/pytorch3d.git@stable
       - git+https://github.com/otaheri/chamfer_distance
+      - ./pointnet2_ops_lib/.
 

@@ -1,10 +1,7 @@
 ---
 title: HoLa-Brep
 python_versio: 3.10
-preload_from_hub:
-  - YuXingyao/HoLa-Brep/AE_ABC_1100k.ckpt
-  - YuXingyao/HoLa-Brep/Diffusion_uncond_1100k.ckpt
-  - YuXingyao/HoLa-Brep/organized_data
+sdk: docker
 ---
 
 

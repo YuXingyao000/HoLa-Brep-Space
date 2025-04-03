@@ -1,8 +1,18 @@
 FROM nvidia/cuda:12.4.1-cudnn-devel-ubuntu22.04
 
+###########################
+# Prepare the environment #
+###########################
+WORKDIR /code
+
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Install dependencies
+ENV CUDA_HOME="/usr/local/cuda-12.4"
+ENV LD_LIBRARY_PATH="${CUDA_HOME}/lib64:${LD_LIBRARY_PATH}"
+ENV PATH="${CUDA_HOME}/bin:${PATH}"
+ENV HF_HOME = "/data/.huggingface"
+ARG TORCH_CUDA_ARCH_LIST="7.5+PTX"
+
 RUN apt-get update && apt-get install -y \
     wget \
     bzip2 \
@@ -24,45 +34,25 @@ RUN apt-get update && apt-get install -y \
     xserver-xorg-video-dummy \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Miniconda
 RUN wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O /tmp/miniconda.sh \
     && bash /tmp/miniconda.sh -b -p /opt/conda \
     && rm /tmp/miniconda.sh
-
-# Ensure Conda is in PATH
 ENV PATH="/opt/conda/bin:${PATH}"
+COPY ./environment.yml /code/environment.yml
+COPY ./pointnet2_ops_lib /code/pointnet2_ops_lib
+RUN conda env create -f environment.yml
 
-# Create user
+###########
+# Run app #
+###########
 RUN useradd -m -u 1000 user
 USER user
-ENV HOME=/home/user \
-	PATH=/home/user/.local/bin:$PATH
-WORKDIR $HOME/HoLa-Brep
+ENV HOME="/home/user"
+ENV	PATH="/home/user/.local/bin:${PATH}"
+EXPOSE 7860
+ENV GRADIO_SERVER_NAME="0.0.0.0"
+WORKDIR ${HOME}/HoLa-Brep
 
-# CUDA environment variables
-ENV CUDA_HOME="/usr/local/cuda-12.4"
-ENV LD_LIBRARY_PATH="${CUDA_HOME}/lib64:${LD_LIBRARY_PATH}"
-ENV PATH="${CUDA_HOME}/bin:${PATH}"
-ENV HF_HOME = "/data/.huggingface"
+COPY --chown=user . ${HOME}/HoLa-Brep
 
-ARG TORCH_CUDA_ARCH_LIST="5.0;5.2;6.0;6.1;7.0;7.5+PTX"
-
-# Setup working directory
-COPY --chown=user ./environment.yml $HOME/HoLa-Brep/environment.yml
-# COPY --chown=user ./requirements.txt $HOME/HoLa-Brep/requirements.txt
-COPY --chown=user ./pointnet2_ops_lib $HOME/HoLa-Brep/pointnet2_ops_lib
-RUN chown -R user:user $HOME/HoLa-Brep
-
-RUN conda env create -f $HOME/HoLa-Brep/environment.yml
-# When you want to install pip dependencies in a conda envrionment, 
-# you need to specify the cuda envrionment variables since conda envrionment
-# has no permission to read the ENV of the container on HuggingFace.
-RUN conda run -n HoLa-Brep bash -c "echo 'export CUDA_HOME=/usr/local/cuda-12.4' >> ~/.bashrc"
-RUN conda run -n HoLa-Brep bash -c "echo 'export LD_LIBRARY_PATH=/usr/local/cuda-12.4/lib64:\$LD_LIBRARY_PATH' >> ~/.bashrc"
-# RUN conda run -n HoLa-Brep pip install torch==2.4.1 torchvision==0.19.1 torchaudio==2.4.1 --index-url https://download.pytorch.org/whl/cu124
-RUN conda run -n HoLa-Brep pip install ./pointnet2_ops_lib/.
-RUN conda env export -n HoLa-Brep
-# Change then ownership
-COPY --chown=user . $HOME/HoLa-Brep
-
-CMD ["conda", "run", "--prefix", "/home/user/.conda/envs/HoLa-Brep", "python", "app.py"]
+CMD ["/bin/bash", "-c", "source activate HoLa-Brep && python app.py"]

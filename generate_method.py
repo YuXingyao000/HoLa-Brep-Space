@@ -107,7 +107,7 @@ def conditioned_generate(files: list, condition: str, generate_output:Path | str
             file_dir=generate_output, 
             output_dir=postprocess_output, 
             num_cpus=2,
-            drop_num=1,
+            drop_num=0,
             timeout=60
             )
     except:
@@ -257,7 +257,8 @@ class PCGenerateMethod(GenerateMethod):
                         return *state['Point Cloud']['Model1'], state['Point Cloud']['Model1'], state
                     else:
                         return gr.Model3D(), gr.Model3D(), gr.File(), gr.Files(), state
-                except:
+                except Exception as e:
+                    print(e)
                     gr.Warning("Something bad happened. Please try some other models", title="Unknown Error")
                     return gr.Model3D(), gr.Model3D(), gr.File(), gr.Files(), state
         return generate_pc
@@ -329,7 +330,8 @@ class MVRGenerateMethod(GenerateMethod):
             try:
                 generate_output, postprocess_output, state = get_output_pathes(state, 'mvr')
                 state = conditioned_generate([Path(img1), Path(img2), Path(img3), Path(img4)], 'mvr', generate_output, postprocess_output, state)
-            except:
+            except Exception as e:
+                print(e)
                 gr.Warning("Something bad happened. Please try some other models", title="Unknown Error")
             if 'Model1' in state['MVR'].keys():
                 return *state['MVR']['Model1'], state['MVR']['Model1'], state

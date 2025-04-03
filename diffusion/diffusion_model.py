@@ -228,11 +228,11 @@ class Diffusion_condition(nn.Module):
         self.use_mean = v_conf["use_mean"]
         self.is_train_decoder = v_conf["train_decoder"]
         if self.is_pretrained:
-            # checkpoint = torch.load(v_conf["autoencoder_weights"], weights_only=False)["state_dict"]
-            repo_id = Path(v_conf["autoencoder_weights"]).parent.as_posix()
-            model_name = Path(v_conf["autoencoder_weights"]).name
-            model_weights = hf_hub_download(repo_id=repo_id, filename=model_name)
-            checkpoint = torch.load(model_weights, weights_only=False)["state_dict"]
+            checkpoint = torch.load(v_conf["autoencoder_weights"], weights_only=False)["state_dict"]
+            # repo_id = Path(v_conf["autoencoder_weights"]).parent.as_posix()
+            # model_name = Path(v_conf["autoencoder_weights"]).name
+            # model_weights = hf_hub_download(repo_id=repo_id, filename=model_name)
+            # checkpoint = torch.load(model_weights, weights_only=False)["state_dict"]
                 
             weights = {k.replace("model.", ""): v for k, v in checkpoint.items()}
             self.ae_model.load_state_dict(weights)
