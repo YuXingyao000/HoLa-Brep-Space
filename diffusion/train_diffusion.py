@@ -331,12 +331,12 @@ def main(v_cfg: DictConfig):
     if v_cfg["trainer"].evaluate:
         print(f"Resuming from {v_cfg['trainer'].resume_from_checkpoint}")
         # try:
-        weights = torch.load(v_cfg["trainer"].resume_from_checkpoint, weights_only=False, map_location="cpu")
+        # weights = torch.load(v_cfg["trainer"].resume_from_checkpoint, weights_only=False, map_location="cpu")
         # except:
-        # repo_id = Path(v_cfg["trainer"].resume_from_checkpoint).parent.as_posix()
-        # model_name = Path(v_cfg["trainer"].resume_from_checkpoint).name
-        # model_weights = hf_hub_download(repo_id=repo_id, filename=model_name)
-        # weights = torch.load(model_weights, weights_only=False, map_location="cpu")
+        repo_id = Path(v_cfg["trainer"].resume_from_checkpoint).parent.as_posix()
+        model_name = Path(v_cfg["trainer"].resume_from_checkpoint).name
+        model_weights = hf_hub_download(repo_id=repo_id, filename=model_name)
+        weights = torch.load(model_weights, weights_only=False, map_location="cpu")
         # print("Checkpoint state_dict keys:", weights["state_dict"].keys())
         # print("Model state_dict keys:", model.state_dict().keys())
         weights = weights["state_dict"]

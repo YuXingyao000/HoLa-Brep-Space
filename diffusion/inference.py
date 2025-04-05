@@ -166,17 +166,19 @@ class InferenceModelBuilder():
             
         model = Diffusion_condition(self._config)
         
-        # repo_id = Path(self._config["diffusion_weights"]).parent.as_posix()
-        # model_name = Path(self._config["diffusion_weights"]).name
-        # model_weights = hf_hub_download(repo_id=repo_id, filename=model_name)
-        diffusion_weights = torch.load(self._config["diffusion_weights"], map_location=device, weights_only=False)["state_dict"]
+        # diffusion_weights = torch.load(self._config["diffusion_weights"], map_location=device, weights_only=False)["state_dict"]
+        repo_id = Path(self._config["diffusion_weights"]).parent.as_posix()
+        model_name = Path(self._config["diffusion_weights"]).name
+        model_weights = hf_hub_download(repo_id=repo_id, filename=model_name)
+        diffusion_weights = torch.load(model_weights, map_location=device, weights_only=False)["state_dict"]
         diffusion_weights = {k: v for k, v in diffusion_weights.items() if "ae_model" not in k}
         diffusion_weights = {k[6:]: v for k, v in diffusion_weights.items() if "model" in k}
         
-        # AE_repo_id = Path(self._config["autoencoder_weights"]).parent.as_posix()
-        # AE_model_name = Path(self._config["autoencoder_weights"]).name
-        # AE_model_weights = hf_hub_download(repo_id=AE_repo_id, filename=AE_model_name)
-        autoencoder_weights = torch.load(self._config["autoencoder_weights"], map_location=device, weights_only=False)["state_dict"]
+        # autoencoder_weights = torch.load(self._config["autoencoder_weights"], map_location=device, weights_only=False)["state_dict"]
+        AE_repo_id = Path(self._config["autoencoder_weights"]).parent.as_posix()
+        AE_model_name = Path(self._config["autoencoder_weights"]).name
+        AE_model_weights = hf_hub_download(repo_id=AE_repo_id, filename=AE_model_name)
+        autoencoder_weights = torch.load(AE_model_weights, map_location=device, weights_only=False)["state_dict"]
         autoencoder_weights = {k[6:]: v for k, v in autoencoder_weights.items() if "model" in k}
         autoencoder_weights = {"ae_model."+k: v for k, v in autoencoder_weights.items()}
         

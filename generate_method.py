@@ -91,28 +91,21 @@ def conditioned_generate(files: list, condition: str, generate_output:Path | str
     generate_output = Path(generate_output)
     postprocess_output = Path(postprocess_output)
     
-    # try:
     diffusion.inference.inference(
             condition=condition,
             input_files=[Path(file) for file in files],
             output_path=generate_output,
             seed=0
             )
-    # except :
-    #     gr.Warning("Generation Error, please try some other models", title="Generation Error")
-    #     return gr.Model3D(), gr.Model3D(), gr.File(),gr.Model3D(), gr.Model3D(), gr.File(),gr.Model3D(), gr.Model3D(), gr.File()
     
-    try:
-        diffusion.inference.inference_batch_postprocess(
-            file_dir=generate_output, 
-            output_dir=postprocess_output, 
-            num_cpus=2,
-            drop_num=0,
-            timeout=60
-            )
-    except:
-        gr.Warning("Please try to generate some other models", title="Postprocessing Error")
-        return state
+    diffusion.inference.inference_batch_postprocess(
+        file_dir=generate_output, 
+        output_dir=postprocess_output, 
+        num_cpus=2,
+        drop_num=0,
+        timeout=60
+        )
+
 
     state = check_valid_and_get_return_models(postprocess_output, generate_output, condition, state)
     return state
@@ -131,7 +124,7 @@ class GenerateMethod(ABC):
 class UncondGenerateMethod(GenerateMethod):
     def get_generate_method(self):
         def generate_uncond(seed, state: gr.BrowserState):
-            # try:
+            try:
                 state = check_user_output_dir(state)
 
                 generate_output = Path(state['user_output_dir']) / 'unconditional'
@@ -147,7 +140,6 @@ class UncondGenerateMethod(GenerateMethod):
                     "trainer.batch_size=1000",
                     "trainer.gpu=1",
                     f"trainer.test_output_dir={generate_output.as_posix()}",
-                    # "trainer.resume_from_checkpoint=D:/HoLa-Brep/ckpt/Diffusion_uncond_1100k.ckpt",
                     "trainer.resume_from_checkpoint=YuXingyao/HoLa-Brep/Diffusion_uncond_1100k.ckpt",
                     "trainer.num_worker=2",
                     "trainer.accelerator=\"32-true\"",
@@ -158,7 +150,6 @@ class UncondGenerateMethod(GenerateMethod):
                     "dataset.condition=None",
                     f"dataset.random_seed={seed}",
                     "model.name=Diffusion_condition",
-                    # "model.autoencoder_weights=D:/HoLa-Brep/ckpt/AE_deepcad_1100k.ckpt",
                     "model.autoencoder_weights=YuXingyao/HoLa-Brep/AE_deepcad_1100k.ckpt",
                     "model.autoencoder=AutoEncoder_1119_light",
                     "model.with_intersection=true",
@@ -178,15 +169,8 @@ class UncondGenerateMethod(GenerateMethod):
                     ]
                 env = os.environ.copy()
                 env["CUDA_VISIBLE_DEVICES"] = "0"
-                # try:
-                subprocess.run(command, check=True, env=env)
-                # except subprocess.CalledProcessError as e:
-                #     gr.Warning(f"{e.stderr}. Please try some other models", title="Generation Error")
-                #     return gr.Model3D(), gr.Model3D(), gr.File(), gr.Model3D(), gr.Model3D(), gr.File(), gr.Model3D(), gr.Model3D(), gr.File(), state
-                # except:
-                #     gr.Warning("Something bad happened. Please try some other models", title="Unknown Error")
-                #     return gr.Model3D(), gr.Model3D(), gr.File(), gr.Model3D(), gr.Model3D(), gr.File(), gr.Model3D(), gr.Model3D(), gr.File(), state
 
+                subprocess.run(command, check=True, env=env)
 
                 # Postprocess the generated model
                 postprocess_output = Path(state['user_output_dir']) / 'unconditional_post'
@@ -201,23 +185,6 @@ class UncondGenerateMethod(GenerateMethod):
                     num_cpus=2,
                     drop_num=3
                 )
-                # command = [
-                #     'python', '-m', 'construct_brep', 
-                #     '--data_root', f'{generate_output.as_posix()}',
-                #     '--out_root', f'{postprocess_output.as_posix()}',
-                #     '--use_ray', 
-                #     '--num_cpus', '2',
-                #     '--drop_num', '1',
-                #     '--from_scratch'
-                # ]
-                # # try:
-                # subprocess.run(command,  check=True)
-                # except subprocess.CalledProcessError as e:
-                #     gr.Warning(f"{e.stderr}. Please try some other models", title="Postprocessing Error")
-                #     return gr.Model3D(), gr.Model3D(), gr.File(), gr.Model3D(), gr.Model3D(), gr.File(), gr.Model3D(), gr.Model3D(), gr.File(), state
-                # except:
-                #     gr.Warning("Something bad happened. Please try some other models", title="Unknown Error")
-                #     return gr.Model3D(), gr.Model3D(), gr.File(), gr.Model3D(), gr.Model3D(), gr.File(), gr.Model3D(), gr.Model3D(), gr.File(), state
 
                 model_folders = pick_valid_model_randomly(postprocess_output, seed)
                 for i, model_folder in enumerate(model_folders):
@@ -237,9 +204,9 @@ class UncondGenerateMethod(GenerateMethod):
                     return *state['Unconditional']['Model1'], state['Unconditional']['Model1'], state
                 else:
                     return gr.Model3D(), gr.Model3D(), gr.File(), gr.Files(), state
-            # except:
-            #     gr.Warning("Something bad happened. Please try some other models", title="Unknown Error")
-            #     return gr.Model3D(), gr.Model3D(), gr.File(), gr.Model3D(), gr.Model3D(), gr.File(), gr.Model3D(), gr.Model3D(), gr.File(), state
+            except:
+                gr.Warning("Something bad happened. Please try some other models", title="Unknown Error")
+                return gr.Model3D(), gr.Model3D(), gr.File(), gr.Files(), state
             
         return generate_uncond
         
