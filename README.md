@@ -9,8 +9,6 @@ sdk: docker
 
 [![arXiv](https://img.shields.io/badge/📃-arXiv%20-red.svg)](https://arxiv_url)
 
-*[Author1](https://Author1), [Author2](https://Author2), [Author3](https://Author3), ...*
-
 <p align="center">
     <img src="./figs/teaser.jpg" alt="HoLa-Brep" style>
 </p>
@@ -18,7 +16,7 @@ sdk: docker
 > This repository is for the HoLa-Brep project. Given a B-rep model which consists of surfaces, (half-) curves and vertices, we design a novel holistic latent representation (HL-Rep) to encode both the continuous geometric properties over all primitives and their discrete topological relationships into one holistic latent space. Compared with existing methods, primitives in the holistic latent space are intrinsically consistent, which enables a more accurate and expressive B-rep generation.
 
 # About HoLa-Brep
-WIP
+HoLa-BRep contains a BRep VAE to encode a BRep model's topological and geometric information into a unified, holistic latent space and a latent diffusion model to generate holistic latent from multiple modalities. It can turn point clouds, single-view images, multi-view images, 2D sketches, or text prompts into solid BRep models. 
 
 
 # Experiments
@@ -175,7 +173,7 @@ You can find model folders containing a `.step` file in the `outputs/${TYPE}_pos
 
 # Inference🖨️
 
-WIP
+You can try to inference **[here](https://huggingface.co/spaces/YuXingyao/HoLa-BRep)**
 
 # Evaluation🧮
 ### 1. Unconditional
@@ -235,5 +233,12 @@ You can check the visualized LFD result in the `outputs` folder.
 # Citation📃
 If you find our project useful, hope you can star our repo and cite our paper as follows:
 ```
-
+@article{HolaBRep25,
+    title={HoLa: B-Rep Generation using a Holistic Latent Representation},
+    author={Yilin Liu and Duoteng Xu and Xinyao Yu and Xiang Xu and Daniel Cohen-Or and Hao Zhang andHuang},
+    journal={ACM Transactions on Graphics (Proceedings of SIGGRAPH)},
+    volume={44},
+    number={4},
+    year={2025},
+}
 ```
