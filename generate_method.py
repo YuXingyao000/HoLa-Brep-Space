@@ -11,6 +11,8 @@ import gradio as gr
 from abc import ABC, abstractmethod
 
 import diffusion.inference
+os.environ["HF_HOME"] = "/data/.huggingface"
+os.environ["TORCH_HOME"] = "/data/.cache/torch"
 
 def delegate_generate_method(radio_type: str, state: gr.BrowserState):
     method: GenerateMethod
@@ -27,7 +29,6 @@ def delegate_generate_method(radio_type: str, state: gr.BrowserState):
     elif radio_type == 'MVR':
         method = MVRGenerateMethod(state)
     return method.get_generate_method()
-
 
 def check_user_output_dir(state: gr.BrowserState):
     if state['user_id'] is None:
@@ -110,6 +111,7 @@ def conditioned_generate(files: list, condition: str, generate_output:Path | str
     state = check_valid_and_get_return_models(postprocess_output, generate_output, condition, state)
     return state
 
+
 class GenerateMethod(ABC):
     static_state = None
     def __init__(self, state: gr.BrowserState):
@@ -141,7 +143,7 @@ class UncondGenerateMethod(GenerateMethod):
                     "trainer.gpu=1",
                     f"trainer.test_output_dir={generate_output.as_posix()}",
                     "trainer.resume_from_checkpoint=YuXingyao/HoLa-Brep/Diffusion_uncond_1100k.ckpt",
-                    "trainer.num_worker=2",
+                    "trainer.num_worker=1",
                     "trainer.accelerator=\"32-true\"",
                     "trainer.exp_name=test",
                     "dataset.name=Dummy_dataset",

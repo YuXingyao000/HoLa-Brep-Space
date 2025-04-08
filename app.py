@@ -3,6 +3,8 @@ from pathlib import Path
 import os
 from app_layout import AppLayout, build_layout
 from generate_method import delegate_generate_method
+os.environ["HF_HOME"] = "/data/.huggingface"
+os.environ["TORCH_HOME"] = "/data/.cache/torch"
 
 # Theme
 theme = gr.themes.Soft(
@@ -62,6 +64,7 @@ div[data-testid="markdown"] span p:not(:first-child) {
     }
     p.title1 {
         font-size: 45px !important;
+        letter-spacing: unset !important;
     }
     p.title2 {
         font-size: 20px !important;
@@ -142,11 +145,11 @@ with gr.Blocks(js=force_light, theme=theme, css=custom_css) as inference:
             }
         </style>        
         <h1 class="container-title">
-            <p class='title1' style='font-size: 100px; text-align: center; letter-spacing: 10px;'> 
+            <p class='title1' style='font-size: 100px; text-align: center;'> 
             HoLa-BRep 
             </p> 
             <p class='title2' style='font-size: 25px; text-align: center;'>
-            Holistic Latent Representation for B-Rep Generation
+            Holistic Latent Representation for BRep Generation
             </sp>
             <p class='title3' style='font-size: 20px; text-align: center;'>
             (Visual Computing Research Center, Shenzhen University)
@@ -157,9 +160,9 @@ with gr.Blocks(js=force_light, theme=theme, css=custom_css) as inference:
 
     gr.Markdown(
             """
-            # ❔What is HoLa-BRep
+            # <h2>What is HoLa-BRep</h2>
             HoLa-BRep contains a B-rep VAE to encode a B-rep model's topological and geometric information into a unified, holistic latent space and a latent diffusion model to generate holistic latent from multiple modalities. It can turn point clouds, single-view images, multi-view images, 2D sketches, or text prompts into solid B-rep models. 
-            # ✨How to use it
+            # <h2>How to use it</h2>
             + Please refer to the example below for more details. You can also select the desired **modality** below and upload your own data. 
             + We generate **4** plausible B-rep models for each input and visualize them in the 3D viewer. 
             + Feel free to explore the generated B-rep models by rotating, zooming, and panning the 3D viewer, or **download** either the wireframe, surface mesh, or solid B-rep model as OBJ or STEP files.
@@ -273,14 +276,18 @@ with gr.Blocks(js=force_light, theme=theme, css=custom_css) as inference:
                     gr.Markdown(
                         value=
                         """
-                        <h1>📝Citation</h1>
+                        <h2>Citation</h2>
                         
                         If our work is helpful for your research or applications, please cite us via:
                         <br>
                         ```
-                        bibtex
-                        @article{
-                            
+                        @article{HolaBRep25,
+                        title={HoLa: B-Rep Generation using a Holistic Latent Representation},
+                        author={Yilin Liu and Duoteng Xu and Xinyao Yu and Xiang Xu and Daniel Cohen-Or and Hao Zhang and Hui Huang},
+                        journal={ACM Transactions on Graphics (Proceedings of SIGGRAPH)},
+                        volume={44},
+                        number={4},
+                        year={2025},
                         }
                         ```
                         """,
@@ -319,7 +326,7 @@ with gr.Blocks(js=force_light, theme=theme, css=custom_css) as inference:
                     with gr.Column(min_width=100):
                         dummy_image = gr.Image(type="filepath", format="png", visible=False)
                         point_cloud_data = gr.Dataset(
-                            label="Examples",
+                            label=f"Example{i+1}",
                             components=[dummy_image],
                             samples=[pc_samples[i]],
                             layout="table"
@@ -329,13 +336,13 @@ with gr.Blocks(js=force_light, theme=theme, css=custom_css) as inference:
             text_data = gr.Dataset(
                 components=text_input_components,
                 samples=[
-                    ["A ball"],
-                    ["A cat"],
-                    ["A wheel"]
+                    ["The object is a rectangular prism with two protruding L-shaped sections on opposite sides."],
+                    ["This design creates a rectangular plate with rounded edges. The plate measures about 0.3214 units in length, 0.75 units in width, and 0.0429 units in height. The rounded edges give the plate a smooth, aesthetically pleasing appearance."],
+                    ["The U-shaped bracket has a flat top and a curved bottom. The design begins by creating a new coordinate system with specific Euler angles and a translation vector. A two-dimensional sketch is then drawn, forming a complex shape with multiple lines and arcs. This sketch is scaled down, rotated, and translated to align with the coordinate system. The sketch is extruded to create a three-dimensional model. The final dimensions of the bracket are approximately 0.7 units in length, 0.75 units in width, and 0.19 units in height. The bracket is designed to integrate seamlessly with other components, providing a sturdy and functional structure."]
                     ],
                 layout='table',
                 label="Examples",
-                headers=["Prompt1"]
+                headers=["Prompt"]
             )
             def dummy_func(text):
                 return gr.Text(text[0])
@@ -349,18 +356,18 @@ with gr.Blocks(js=force_light, theme=theme, css=custom_css) as inference:
                             examples=[
                                 [f"{i % 10 + 1}.png"]
                                 ],
-                            label=f"{i+1}"
+                            label=f"Example{i+1}"
                             )
         elif generate_mode == "SVR":
             with gr.Row():
-                for i in range(15):
+                for i in range(12):
                     with gr.Column(min_width=100):
                         example = gr.Examples(
                             inputs=svr_input_components,
                             examples=[
                                 [f"{i % 10 + 1}.png"]
                                 ],
-                            label=f"{i+1}"
+                            label=f"Example{i+1}"
                             )
                 
                 
@@ -389,4 +396,4 @@ with gr.Blocks(js=force_light, theme=theme, css=custom_css) as inference:
     )
 
 if __name__ == "__main__":
-    inference.launch(server_name="0.0.0.0", server_port=7860, share=True)
+    inference.launch(server_name="0.0.0.0", server_port=7860)

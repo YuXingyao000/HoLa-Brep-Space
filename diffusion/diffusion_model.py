@@ -2,6 +2,7 @@ import importlib
 import math
 import numpy as np
 import time
+import os
 from pathlib import Path
 from huggingface_hub import hf_hub_download
 import torch
@@ -23,6 +24,8 @@ from scipy.spatial.transform import Rotation
 
 # from thirdparty.PointTransformerV3.model import *
 
+os.environ["HF_HOME"] = "/data/.huggingface"
+os.environ["TORCH_HOME"] = "/data/.cache/torch"
 
 def add_timer(time_statics, v_attr, timer):
     if v_attr not in time_statics:

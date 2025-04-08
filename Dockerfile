@@ -10,7 +10,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 ENV CUDA_HOME="/usr/local/cuda-12.4"
 ENV LD_LIBRARY_PATH="${CUDA_HOME}/lib64:${LD_LIBRARY_PATH}"
 ENV PATH="${CUDA_HOME}/bin:${PATH}"
-ENV HF_HOME = "/data/.huggingface"
+ENV HF_HOME="/data/.huggingface"
 ARG TORCH_CUDA_ARCH_LIST="7.5+PTX"
 
 RUN apt-get update && apt-get install -y \

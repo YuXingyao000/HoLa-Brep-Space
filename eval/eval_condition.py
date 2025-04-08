@@ -31,7 +31,6 @@ from OCC.Core.TopAbs import TopAbs_COMPOUND, TopAbs_SHELL, TopAbs_SOLID
 from diffusion.utils import get_primitives, get_triangulations, get_points_along_edge, get_curve_length
 from eval.check_valid import check_step_valid_soild
 
-from eval.data_processor import ComplexGenProcessor, NVDNetProcessor
 
 def is_vertex_close(p1, p2, tol=1e-3):
     return np.linalg.norm(np.array(p1) - np.array(p2)) < tol
@@ -252,7 +251,7 @@ def eval_one_with_try(eval_root, gt_root, folder_name, is_point2cad=False, v_num
     except:
         pass
 
-def eval_one(eval_root, gt_root, folder_name, is_point2cad=False, is_complexgen=False,  is_nvdnet=False, v_num_per_m=100):
+def eval_one(eval_root, gt_root, folder_name, is_point2cad=False, v_num_per_m=100):
     if os.path.exists(eval_root / folder_name / 'error.txt'):
         os.remove(eval_root / folder_name / 'error.txt')
     if os.path.exists(eval_root / folder_name / 'eval.npz'):
@@ -313,16 +312,6 @@ def eval_one(eval_root, gt_root, folder_name, is_point2cad=False, is_complexgen=
             else:
                 recon_edge_vertex[int(items[0])] = list(map(lambda item: int(item), items[1:]))
         pass
-    elif is_complexgen:
-        complex_data = ComplexGenProcessor(eval_root / folder_name / f"{folder_name}_geom_refine.json", build_brep=True)
-        # Geometry
-        recon_faces, recon_face_points, recon_edges, recon_edge_points, \
-            recon_vertices, recon_vertex_points = complex_data.get_data(v_num_per_m)
-    elif is_nvdnet:
-        pass
-        nvd_data = NVDNetProcessor(eval_root / folder_name)
-        recon_faces, recon_face_points, recon_edges, recon_edge_points, \
-            recon_vertices, recon_vertex_points = nvd_data.get_data(v_num_per_m)
     else:
         try:
             # Face chamfer distance

@@ -1,5 +1,6 @@
 import argparse
 import sys
+import os
 import os.path
 from pathlib import Path
 import numpy as np
@@ -19,6 +20,9 @@ import torch
 from lightning_fabric import seed_everything
 from huggingface_hub import hf_hub_download
 import torchvision.transforms as T
+
+os.environ["HF_HOME"] = "/data/.huggingface"
+os.environ["TORCH_HOME"] = "/data/.cache/torch"
 
 
 class DataProcessor():
@@ -184,7 +188,7 @@ class InferenceModelBuilder():
         
         diffusion_weights.update(autoencoder_weights)
         diffusion_weights = {k: v for k, v in diffusion_weights.items() if "camera_embedding" not in k}
-        model.load_state_dict(diffusion_weights, strict=False)
+        model.load_state_dict(diffusion_weights, strict=True)
         model.to(device)
         model.eval()
         self._model = model
@@ -320,224 +324,28 @@ def inference(condition: str, input_files: list[Path | str], output_path: Path, 
 def inference_batch_postprocess(file_dir: Path ,output_dir: Path, num_cpus: int=4, drop_num: int=2, timeout: int=60):
     print("Start post processing")
     
-    if not ray.is_initialized():
-        ray.init(
-            dashboard_host="0.0.0.0",
-            dashboard_port=8080,
-            num_cpus=num_cpus,
-        )
-    
     construct_brep_from_datanpz_ray = ray.remote(num_cpus=1, max_retries=0)(construct_brep_from_datanpz)
     
     all_folders = sorted(os.listdir(file_dir))
     
     tasks = []
-    # for i, one_folder in enumerate(all_folders):
-    #     construct_brep_from_datanpz(
-    #         data_root=file_dir,
-    #         out_root=output_dir,
-    #         folder_name=one_folder,
-    #         v_drop_num=drop_num,
-    #         is_ray=False,
-    #         is_optimize_geom=False,
-    #         from_scratch=True,
-    #         isdebug=True,
-    #         is_save_data=True
-    #         )
-    
     for i, one_folder in enumerate(all_folders):
-        tasks.append(
-            construct_brep_from_datanpz_ray.remote(
-                file_dir, 
-                output_dir,
-                one_folder,
-                v_drop_num=drop_num,
-                use_cuda=False, 
-                from_scratch=True,
-                is_log=False, 
-                is_ray=True, 
-                is_optimize_geom=False, 
-                isdebug=True,
-                is_save_data=True
+        construct_brep_from_datanpz(
+            data_root=file_dir,
+            out_root=output_dir,
+            folder_name=one_folder,
+            v_drop_num=drop_num,
+            is_ray=False,
+            is_optimize_geom=False,
+            from_scratch=True,
+            isdebug=True,
+            is_save_data=True
             )
-        )
-        
-    results = []
-    success_count = 0
-    for task in tqdm(tasks):
-        try:
-            results.append(ray.get(task, timeout=timeout))
-            # Check whether the number of valid files is greater than 3
-            for done_folder in os.listdir(output_dir):
-                output_files = os.listdir(Path(output_dir) / Path(done_folder))
-                if 'success.txt' in output_files:
-                    success_count += 1
-                    # ray.kill()
-        except:
-            results.append(None)
+        success_count = 0
+        for done_folder in os.listdir(output_dir):
+            output_files = os.listdir(Path(output_dir) / Path(done_folder))
+            if 'success.txt' in output_files:
+                success_count += 1
         if success_count >= 4:
-            if ray.is_initialized():
-                ray.shutdown()
             break
-        else:
-            success_count = 0
-
     print("Done.")
-    
-
-# Deprecated
-# def setup_model(conf, device):
-#     model = Diffusion_condition(conf)
-#     diffusion_weights = torch.load(conf["diffusion_weights"], map_location=device, weights_only=False)["state_dict"]
-#     diffusion_weights = {k: v for k, v in diffusion_weights.items() if "ae_model" not in k}
-#     diffusion_weights = {k[6:]: v for k, v in diffusion_weights.items() if "model" in k}
-#     autoencoder_weights = torch.load(conf["autoencoder_weights"], map_location=device, weights_only=False)["state_dict"]
-#     autoencoder_weights = {k[6:]: v for k, v in autoencoder_weights.items() if "model" in k}
-#     autoencoder_weights = {"ae_model."+k: v for k, v in autoencoder_weights.items()}
-#     diffusion_weights.update(autoencoder_weights)
-#     diffusion_weights = {k: v for k, v in diffusion_weights.items() if "camera_embedding" not in k}
-#     model.load_state_dict(diffusion_weights, strict=False)
-#     model.to(device)
-#     model.eval()
-#     return model
-
-
-# def data_construction(config, device, fileitem):
-#     NUM_PROPOSALS = 32
-#     PC_NUM_SAMPLE = 4096
-    
-#     data = {
-#         "conditions": {}
-#         }
-#     input_file = Path(fileitem)
-#     if not input_file.exists():
-#         print(f"File {input_file} not found.")
-#         exit(1)
-        
-#     if "pc" in config["condition"]:
-#         points_tensor = get_point_cloud_tensor(device, PC_NUM_SAMPLE, input_file)
-#         data["conditions"]["points"] = points_tensor[None, None, :, :].repeat(NUM_PROPOSALS, 1, 1, 1)
-#     elif "txt" in config["condition"]:
-#         data["conditions"]["txt"] = [fileitem for item in range(NUM_PROPOSALS)]
-#     elif "sketch" in config["condition"] or "svr" in config["condition"] or "mvr" in config["condition"]:
-#         transform = T.Compose([
-#                 T.ToPILImage(),
-#                 T.Resize((224, 224)),
-#                 T.ToTensor(),
-#                 T.Normalize(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)),
-#             ])
-#         img = np.array(Image.open(input_file).convert("RGB"))
-#         img = transform(img).to(device)
-#         img = img[None, None, :].repeat(NUM_PROPOSALS, 1, 1, 1, 1)
-#         data["conditions"]["imgs"] = img
-#         data["conditions"]["img_id"] = torch.tensor([[0]], device=device).repeat(NUM_PROPOSALS, 1)
-#     else:
-#         print("Unknown condition")
-#         exit(1)
-#     return data
-
-
-# if __name__ == '__main__':
-#     conf = {
-#         "name": "Diffusion_condition",
-#         "train_decoder": False,
-#         "stored_z": False,
-#         "use_mean": True,
-#         "diffusion_latent": 768,
-#         "diffusion_type": "epsilon",
-#         "loss": "l2",
-#         "pad_method": "random",
-#         "num_max_faces": 30,
-#         "beta_schedule": "squaredcos_cap_v2",
-#         "beta_start": 0.0001,
-#         "beta_end": 0.02,
-#         "variance_type": "fixed_small",
-#         "addition_tag": False,
-#         "autoencoder": "AutoEncoder_1119_light",
-#         "with_intersection": True,
-#         "dim_latent": 8,
-#         "dim_shape": 768,
-#         "sigmoid": False,
-#         "in_channels": 6,
-#         "gaussian_weights": 1e-6,
-#         "norm": "layer",
-#         "autoencoder_weights": "",
-#         "is_aug": False,
-#         "condition": [],
-#         "cond_prob": []
-#     }
-    
-#     NUM_PROPOSALS = 32
-    
-#     parser = argparse.ArgumentParser(prog='Inference')
-#     parser.add_argument('--autoencoder_weights', type=str, required=True)
-#     parser.add_argument('--diffusion_weights', type=str, required=True)
-#     parser.add_argument('--condition', nargs='+', required=True)
-#     parser.add_argument('--input', nargs='+', type=str)
-#     parser.add_argument('--output_dir', type=str, default="./inference_output")
-
-#     args = parser.parse_args()
-#     conf["autoencoder_weights"] = args.autoencoder_weights
-#     conf["diffusion_weights"] = args.diffusion_weights
-#     conf["condition"] = args.condition
-
-#     # Model setup
-#     seed_everything(int(time.time()))
-#     torch.backends.cudnn.benchmark = False
-#     torch.set_float32_matmul_precision("medium")
-
-#     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-#     model = setup_model(conf)
-
-#     print("We have {} data".format(len(args.input)))
-#     output_dir = Path(args.output_dir)
-#     (output_dir / "network_pred").mkdir(parents=True, exist_ok=True)
-
-#     # Inference
-#     for id_item, fileitem in enumerate(tqdm(args.input)):
-#         data = data_construction(conf, device, fileitem)
-
-#         with torch.no_grad():
-#             network_preds = model.inference(NUM_PROPOSALS, device, v_data=data, v_log=True)
-
-#         for idx in range((len(network_preds))):
-#             prefix = f"{name}_{idx:02d}"
-#             (output_dir/"network_pred"/prefix).mkdir(parents=True, exist_ok=True)
-#             recon_data = network_preds[idx]
-#             export_edges(recon_data["pred_edge"], str(output_dir / "network_pred" / prefix / f"edge.obj"))
-#             np.savez_compressed(str(output_dir / "network_pred" / prefix / f"data.npz"),
-#                                 pred_face_adj_prob=recon_data["pred_face_adj_prob"],
-#                                 pred_face_adj=recon_data["pred_face_adj"].cpu().numpy(),
-#                                 pred_face=recon_data["pred_face"],
-#                                 pred_edge=recon_data["pred_edge"],
-#                                 pred_edge_face_connectivity=recon_data["pred_edge_face_connectivity"],
-#                                 )
-#     # Post processing
-#     print("Start post processing")
-#     num_cpus = 24
-#     ray.init(
-#         dashboard_host="0.0.0.0",
-#         dashboard_port=8080,
-#         num_cpus=num_cpus,
-#     )
-#     construct_brep_from_datanpz_ray = ray.remote(num_cpus=1, max_retries=0)(construct_brep_from_datanpz)
-
-#     all_folders = os.listdir(output_dir / "network_pred")
-#     all_folders.sort()
-
-#     tasks = []
-#     for i in range(len(all_folders)):
-#         tasks.append(construct_brep_from_datanpz_ray.remote(
-#             output_dir / "network_pred", output_dir/"after_post",
-#             all_folders[i],
-#             v_drop_num=2,
-#             use_cuda=False, from_scratch=True,
-#             is_log=False, is_ray=True, is_optimize_geom=True, isdebug=False,
-#         ))
-#     results = []
-#     for i in tqdm(range(len(all_folders))):
-#         try:
-#             results.append(ray.get(tasks[i], timeout=60))
-#         except:
-#             results.append(None)
-#     print("Done.")
