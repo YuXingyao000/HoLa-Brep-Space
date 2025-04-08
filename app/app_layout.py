@@ -6,8 +6,6 @@ from abc import ABC, abstractmethod
 
 # Tab Interface
 class AppLayout(ABC):
-    static_state = None
-    
     @abstractmethod
     def get_note(self) -> gr.Markdown:
         pass
@@ -15,25 +13,6 @@ class AppLayout(ABC):
     @abstractmethod
     def get_input_components(self) -> List[gr.Component]:
         pass
-
-
-def build_layout(radio_type: str, user_state: gr.State) -> AppLayout:
-    if AppLayout.static_state is None:
-        AppLayout.static_state = user_state
-    if radio_type == "Unconditional":
-        return UncondLayout()
-    elif radio_type == 'Point Cloud':
-        return PCLayout()
-    elif radio_type == 'Sketch':
-        return SketchLayout()
-    elif radio_type == 'Text':
-        return TextLayout()
-    elif radio_type == 'SVR':
-        return SVRLayout()
-    elif radio_type == 'MVR':
-        return MVRLayout()
-
-
     
  
 # Concrete Implementation

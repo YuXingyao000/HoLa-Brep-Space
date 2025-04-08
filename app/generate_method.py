@@ -11,8 +11,8 @@ import gradio as gr
 from abc import ABC, abstractmethod
 
 import diffusion.inference
-os.environ["HF_HOME"] = "/data/.huggingface"
-os.environ["TORCH_HOME"] = "/data/.cache/torch"
+from diffusion.inference_model_builder import ModelBuilder
+from diffusion.inference_model_director import *
 
 def delegate_generate_method(radio_type: str, state: gr.BrowserState):
     method: GenerateMethod
@@ -88,12 +88,26 @@ def pick_valid_model_randomly(postprocess_output: Path, seed: int =0, num=4,) ->
         random.seed(seed)
         return [Path(output_folders[i]) for i in random.sample(range(len(output_folders)), num)]    
 
+def get_director(condition):
+    if condition == "pc":
+        return PCDirector(ModelBuilder())
+    elif condition == "txt":
+        return TxtDirector(ModelBuilder())
+    elif condition == "sketch":
+        return SketchDirector(ModelBuilder())
+    elif condition == "svr":
+        return SVRDirector(ModelBuilder())
+    elif condition == "mvr":
+        return MVRDirector(ModelBuilder())
+
 def conditioned_generate(files: list, condition: str, generate_output:Path | str, postprocess_output: Path | str, state: gr.BrowserState):
     generate_output = Path(generate_output)
     postprocess_output = Path(postprocess_output)
     
+    director = get_director(condition)
+    
     diffusion.inference.inference(
-            condition=condition,
+            model_director=director,
             input_files=[Path(file) for file in files],
             output_path=generate_output,
             seed=0

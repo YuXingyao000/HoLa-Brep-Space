@@ -1,8 +1,10 @@
+#Frontend
 import gradio as gr
 from pathlib import Path
 import os
-from app_layout import AppLayout, build_layout
-from generate_method import delegate_generate_method
+from app.app_layout import *
+from app.generate_method import *
+
 os.environ["HF_HOME"] = "/data/.huggingface"
 os.environ["TORCH_HOME"] = "/data/.cache/torch"
 
@@ -76,13 +78,14 @@ div[data-testid="markdown"] span p:not(:first-child) {
 """
 
 PRESENT_NUM = 4
+# Dynamically registered functions 
 def get_model(generate_mode: str, present_mode: str, model_index: int, user_state: dict):
     models: dict = user_state[generate_mode]
     if f"Model{model_index + 1}" not in models.keys():
         if present_mode != "Downloads":
             return gr.Model3D(label=f"{present_mode}{model_index + 1}",value='empty.obj',display_mode=present_mode.lower(), key=present_mode)
         else:
-            return gr.Files(label=f"Models{model_index + 1}", value=["sample.stl", "sample.ply", "sample.step"], interactive=False, key=present_mode)
+            return gr.Files(label=f"Models{model_index + 1}", value=["app/examples/empty_examples/sample.stl", "app/examples/empty_examples/sample.ply", "app/examples/empty_examples/sample.step"], interactive=False, key=present_mode)
     else:
         if present_mode == "Wireframe":
             return gr.Model3D(label=f"{present_mode}{model_index + 1}",value=models[f'Model{model_index + 1}'][0],display_mode=present_mode.lower(), key=present_mode)
@@ -105,33 +108,24 @@ def get_next_model(generate_mode: str, present_mode: str,  model_index: int, use
     downloads = get_model(generate_mode, "Downloads", model_index, user_state)
     return model_index, wire, solid, downloads
 
-# generate_mode = gr.Radio(['Unconditional', 'Point Cloud', 'Sketch', 'Text', 'SVR', 'MVR'], type='value', value="Unconditional", label="Choose a generating method")
-# present_mode = gr.Radio(['Wireframe', 'Solid', 'Downloads'], type='value', value="Solid", label="Preview:")
-# generate_button = gr.Button("Generate")
+def set_generating_type(mode):
+    return gr.Text(mode, visible=False)
+    
+def set_demonstrating_type(mode):
+    return gr.Text(mode, visible=False)
+
+# Declarations for pre-rendering
 model_solid = gr.Model3D(label=f'Solid1', value='empty.obj', key="Solid")
 model_wireframe = gr.Model3D(label=f'Wireframe1', value='empty.obj', key="Wireframe")
 step_file = gr.File(label=f'Step', file_count='single', file_types=['.step'], interactive=False, visible=False)
-download_files = gr.Files(label=f"Models1", value=["sample.stl", "sample.ply", "sample.step"], interactive=False, key="Downloads")
+download_files = gr.Files(label=f"Models1", value=["app/examples/empty_examples/sample.stl", "app/examples/empty_examples/sample.ply", "app/examples/empty_examples/sample.step"], interactive=False, key="Downloads")
 
 input_tab = gr.Tabs()
 
-generating = gr.Text("Unconditional",visible=False)
-presenting = gr.Text("Solid", visible=False)
+generating_type = gr.Text("Unconditional",visible=False)
+demonstrating_type = gr.Text("Solid", visible=False)
 
-uncond_tab = gr.Tab("Unconditional") 
-pc_tab = gr.Tab("Point Cloud")
-sketch_tab = gr.Tab("Sketch")
-text_tab = gr.Tab("Text")
-svr_tab = gr.Tab("SVR")
-mvr_tab = gr.Tab("MVR")
-
-
-def set_generate_mode(mode):
-    return gr.Text(mode, visible=False)
-    
-def set_present_mode(mode):
-    return gr.Text(mode, visible=False)
-
+# Main body
 with gr.Blocks(js=force_light, theme=theme, css=custom_css) as inference:
 
     gr.Markdown(
@@ -161,11 +155,11 @@ with gr.Blocks(js=force_light, theme=theme, css=custom_css) as inference:
     gr.Markdown(
             """
             # <h2>What is HoLa-BRep</h2>
-            HoLa-BRep contains a B-rep VAE to encode a B-rep model's topological and geometric information into a unified, holistic latent space and a latent diffusion model to generate holistic latent from multiple modalities. It can turn point clouds, single-view images, multi-view images, 2D sketches, or text prompts into solid B-rep models. 
+            HoLa-BRep contains a BRep VAE to encode a BRep model's topological and geometric information into a unified, holistic latent space and a latent diffusion model to generate holistic latent from multiple modalities. It can turn point clouds, single-view images, multi-view images, 2D sketches, or text prompts into solid BRep models. 
             # <h2>How to use it</h2>
             + Please refer to the example below for more details. You can also select the desired **modality** below and upload your own data. 
-            + We generate **4** plausible B-rep models for each input and visualize them in the 3D viewer. 
-            + Feel free to explore the generated B-rep models by rotating, zooming, and panning the 3D viewer, or **download** either the wireframe, surface mesh, or solid B-rep model as OBJ or STEP files.
+            + We generate **4** plausible BRep models for each input and visualize them in the 3D viewer. 
+            + Feel free to explore the generated BRep models by rotating, zooming, and panning the 3D viewer, or **download** either the wireframe, surface mesh, or solid BRep model as OBJ or STEP files.
             """
         )
     
@@ -181,18 +175,19 @@ with gr.Blocks(js=force_light, theme=theme, css=custom_css) as inference:
             "MVR" : dict(),
         }
         )
-    AppLayout.static_state = user_state
-    generating.render()
-    presenting.render()
-    
+
+    generating_type.render()
+    demonstrating_type.render()
+    GenerateMethod.static_state = user_state
     
     with gr.Row():
         with gr.Column() as input_col:
             with gr.Tabs() as input_tab:
                 with gr.Tab("Unconditional") as uncond_tab: 
-                    uncond_layout = build_layout(uncond_tab.label, user_state)
+                    uncond_layout = UncondLayout()
                     uncond_layout.get_note()
                     uncond_input_components = uncond_layout.get_input_components()
+                    
                     uncond_button = gr.Button("Generate")
                     uncond_button.click(
                         fn=delegate_generate_method(uncond_tab.label, user_state), 
@@ -201,9 +196,10 @@ with gr.Blocks(js=force_light, theme=theme, css=custom_css) as inference:
                     )
                     
                 with gr.Tab("Point Cloud") as pc_tab:
-                    pc_layout = build_layout(pc_tab.label, user_state)
+                    pc_layout = PCLayout()
                     pc_layout.get_note()
                     pc_input_components = pc_layout.get_input_components()
+                    
                     pc_button = gr.Button("Generate")
                     pc_button.click(
                         fn=delegate_generate_method(pc_tab.label, user_state), 
@@ -212,9 +208,10 @@ with gr.Blocks(js=force_light, theme=theme, css=custom_css) as inference:
                     )
                     
                 with gr.Tab("Sketch") as sketch_tab:
-                    sketch_layout = build_layout(sketch_tab.label, user_state)
+                    sketch_layout = SketchLayout()
                     sketch_layout.get_note()
                     sketch_input_components = sketch_layout.get_input_components()
+                    
                     sketch_button = gr.Button("Generate")
                     sketch_button.click(
                         fn=delegate_generate_method(sketch_tab.label, user_state), 
@@ -223,9 +220,10 @@ with gr.Blocks(js=force_light, theme=theme, css=custom_css) as inference:
                     )
                     
                 with gr.Tab("Text") as text_tab:
-                    text_layout = build_layout(text_tab.label, user_state)
+                    text_layout = TextLayout()
                     text_layout.get_note()
                     text_input_components = text_layout.get_input_components()
+                    
                     text_button = gr.Button("Generate")
                     text_button.click(
                         fn=delegate_generate_method(text_tab.label, user_state), 
@@ -234,9 +232,10 @@ with gr.Blocks(js=force_light, theme=theme, css=custom_css) as inference:
                     )
                     
                 with gr.Tab("SVR") as svr_tab:
-                    svr_layout = build_layout(svr_tab.label, user_state)
+                    svr_layout = SVRLayout()
                     svr_layout.get_note()
                     svr_input_components = svr_layout.get_input_components()
+                    
                     svr_button = gr.Button("Generate")
                     svr_button.click(
                         fn=delegate_generate_method(svr_tab.label, user_state), 
@@ -245,7 +244,7 @@ with gr.Blocks(js=force_light, theme=theme, css=custom_css) as inference:
                     )
                     
                 with gr.Tab("MVR") as mvr_tab:
-                    mvr_layout = build_layout(mvr_tab.label, user_state)
+                    mvr_layout = MVRLayout()
                     mvr_layout.get_note()
                     with gr.Row():
                         mvr_input_components = mvr_layout.get_input_components()
@@ -256,12 +255,12 @@ with gr.Blocks(js=force_light, theme=theme, css=custom_css) as inference:
                         outputs=[model_wireframe, model_solid, step_file, download_files, user_state]
                     )
                 
-                uncond_tab.select(fn=set_generate_mode, inputs=gr.Text(uncond_tab.label, visible=False), outputs=generating)
-                pc_tab.select(fn=set_generate_mode, inputs=gr.Text(pc_tab.label, visible=False), outputs=generating)
-                sketch_tab.select(fn=set_generate_mode, inputs=gr.Text(sketch_tab.label, visible=False), outputs=generating)
-                svr_tab.select(fn=set_generate_mode, inputs=gr.Text(svr_tab.label, visible=False), outputs=generating)
-                mvr_tab.select(fn=set_generate_mode, inputs=gr.Text(mvr_tab.label, visible=False), outputs=generating)
-                text_tab.select(fn=set_generate_mode, inputs=gr.Text(text_tab.label, visible=False), outputs=generating)
+                uncond_tab.select(fn=set_generating_type, inputs=gr.Text(uncond_tab.label, visible=False), outputs=generating_type)
+                pc_tab.select(fn=set_generating_type, inputs=gr.Text(pc_tab.label, visible=False), outputs=generating_type)
+                sketch_tab.select(fn=set_generating_type, inputs=gr.Text(sketch_tab.label, visible=False), outputs=generating_type)
+                svr_tab.select(fn=set_generating_type, inputs=gr.Text(svr_tab.label, visible=False), outputs=generating_type)
+                mvr_tab.select(fn=set_generating_type, inputs=gr.Text(mvr_tab.label, visible=False), outputs=generating_type)
+                text_tab.select(fn=set_generating_type, inputs=gr.Text(text_tab.label, visible=False), outputs=generating_type)
                     
             
         with gr.Column() as output_col:        
@@ -294,9 +293,9 @@ with gr.Blocks(js=force_light, theme=theme, css=custom_css) as inference:
                         height=300,
                         )
             
-            solid_tab.select(fn=set_present_mode, inputs=gr.Text(solid_tab.label, visible=False))
-            wireframe_tab.select(fn=set_present_mode, inputs=gr.Text(wireframe_tab.label, visible=False))
-            download_tab.select(fn=set_present_mode, inputs=gr.Text(download_tab.label, visible=False))
+            solid_tab.select(fn=set_demonstrating_type, inputs=gr.Text(solid_tab.label, visible=False))
+            wireframe_tab.select(fn=set_demonstrating_type, inputs=gr.Text(wireframe_tab.label, visible=False))
+            download_tab.select(fn=set_demonstrating_type, inputs=gr.Text(download_tab.label, visible=False))
             
             model_index = gr.Number(value=0, visible=False)
             with gr.Row() as switch_row:
@@ -304,20 +303,21 @@ with gr.Blocks(js=force_light, theme=theme, css=custom_css) as inference:
                 next_button = gr.Button("Next")
                 last_button.click(
                     fn=get_last_model,
-                    inputs=[generating, gr.Text(presenting, visible=False), model_index, user_state],
+                    inputs=[generating_type, gr.Text(demonstrating_type, visible=False), model_index, user_state],
                     outputs=[model_index, model_wireframe, model_solid, download_files])
                 next_button.click(
                     fn=get_next_model,
-                    inputs=[generating, gr.Text(presenting, visible=False), model_index, user_state],
+                    inputs=[generating_type, gr.Text(demonstrating_type, visible=False), model_index, user_state],
                     outputs=[model_index, model_wireframe, model_solid, download_files])
 
-    @gr.render(inputs=[generating], triggers=[generating.change, inference.load])
+    @gr.render(inputs=[generating_type], triggers=[generating_type.change, inference.load])
     def show_examples(generate_mode):
         if generate_mode == "Unconditional":
             pass
+        
         elif generate_mode == "Point Cloud":
             pc_samples=[
-                            [Path("pc_samples") / sample_number / "pc.png"] for sample_number in os.listdir("pc_samples") if sample_number != "take_photo.py"
+                            [Path("app/examples/pc_examples") / sample_number / "pc.png"] for sample_number in os.listdir("app/examples/pc_examples") if sample_number != "take_photo.py"
                         ]
             with gr.Row():
                 def dummy_pc_func(pic_path):
@@ -332,6 +332,7 @@ with gr.Blocks(js=force_light, theme=theme, css=custom_css) as inference:
                             layout="table"
                         )
                         point_cloud_data.click(dummy_pc_func, inputs=point_cloud_data, outputs=pc_input_components)
+                        
         elif generate_mode == "Text":
             text_data = gr.Dataset(
                 components=text_input_components,
@@ -347,6 +348,7 @@ with gr.Blocks(js=force_light, theme=theme, css=custom_css) as inference:
             def dummy_func(text):
                 return gr.Text(text[0])
             text_data.click(fn=dummy_func, inputs=text_data, outputs=text_input_components)
+            
         elif generate_mode == "Sketch":
             with gr.Row():
                 for i in range(12):
@@ -354,10 +356,11 @@ with gr.Blocks(js=force_light, theme=theme, css=custom_css) as inference:
                         example = gr.Examples(
                             inputs=sketch_input_components,
                             examples=[
-                                [f"{i % 10 + 1}.png"]
+                                [f"app/examples/img_examples/{i % 10 + 1}.png"]
                                 ],
                             label=f"Example{i+1}"
                             )
+                        
         elif generate_mode == "SVR":
             with gr.Row():
                 for i in range(12):
@@ -365,12 +368,11 @@ with gr.Blocks(js=force_light, theme=theme, css=custom_css) as inference:
                         example = gr.Examples(
                             inputs=svr_input_components,
                             examples=[
-                                [f"{i % 10 + 1}.png"]
+                                [f"app/examples/img_examples/{i % 10 + 1}.png"]
                                 ],
                             label=f"Example{i+1}"
                             )
-                
-                
+                       
         elif generate_mode == "MVR":
             with gr.Row():
                 for i in range(4):
@@ -379,7 +381,7 @@ with gr.Blocks(js=force_light, theme=theme, css=custom_css) as inference:
                         example = gr.Examples(
                             inputs=mvr_input_components,
                             examples=[
-                                [f"mvr_samples/{file_num[i]}_img0.png", f"mvr_samples/{file_num[i]}_img1.png", f"mvr_samples/{file_num[i]}_img2.png", f"mvr_samples/{file_num[i]}_img3.png"], 
+                                [f"app/examples/mvr_examples/{file_num[i]}_img0.png", f"app/examples/mvr_examples/{file_num[i]}_img1.png", f"app/examples/mvr_examples/{file_num[i]}_img2.png", f"app/examples/mvr_examples/{file_num[i]}_img3.png"], 
                                 ],
                             label=f"{i+1}"
                         )

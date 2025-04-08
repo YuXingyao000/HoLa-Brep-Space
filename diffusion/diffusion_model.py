@@ -22,11 +22,6 @@ from pointnet2_ops.pointnet2_modules import PointnetSAModuleMSG, \
 from scipy.spatial.transform import Rotation
 
 
-# from thirdparty.PointTransformerV3.model import *
-
-os.environ["HF_HOME"] = "/data/.huggingface"
-os.environ["TORCH_HOME"] = "/data/.cache/torch"
-
 def add_timer(time_statics, v_attr, timer):
     if v_attr not in time_statics:
         time_statics[v_attr] = 0.
