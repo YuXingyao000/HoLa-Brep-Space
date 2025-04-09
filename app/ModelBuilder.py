@@ -34,6 +34,9 @@ class ModelBuilder():
             seed_everything(seed)
         else:
             seed_everything(0)
+            
+    def set_up_model_template(self, model):
+        self._model = model
 
     def make_model(self, device: Optional[torch.device] = None):
         # Torch condition
@@ -44,8 +47,8 @@ class ModelBuilder():
         if device is None:
             device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
             
-        # Basic model
-        model = Diffusion_condition(self._config)
+        # Model template setup check(Diffusion_condition or Diffusion_condition_mvr)
+        self._model_instance = self._model(self._config)
         
         # Load diffusion weights
         repo_id = Path(self._config["diffusion_weights"]).parent.as_posix()
@@ -67,16 +70,18 @@ class ModelBuilder():
         diffusion_weights.update(autoencoder_weights)
         diffusion_weights = {k: v for k, v in diffusion_weights.items() if "camera_embedding" not in k}
         
-        model.load_state_dict(diffusion_weights, strict=False)
-        model.to(device)
-        model.eval()
-        self._model = model
-        return self._model
+        self._model_instance.load_state_dict(diffusion_weights, strict=False)
+        self._model_instance.to(device)
+        self._model_instance.eval()
+        
+        return self._model_instance
     
     def reset(self):
-        self._config = self.__init_config()         
+        self._model = Diffusion_condition
+        self._model_instance = None
+        self._config = self._init_config()         
         
-    def __init_config(self):
+    def _init_config(self):
         # Basic model setup
         return {
         "name": "Diffusion_condition",
@@ -109,5 +114,5 @@ class ModelBuilder():
     
     @property
     def model(self):
-        model = self._model
+        model = self._model_instance
         return model

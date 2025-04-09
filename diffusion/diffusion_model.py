@@ -893,4 +893,3 @@ class Diffusion_condition_mvr(Diffusion_condition):
                 txt_feat = torch.stack(txt_feat, dim=0)
             condition = self.txt_fc(txt_feat)[:, None]
         return condition
-

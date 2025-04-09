@@ -2,8 +2,8 @@
 import gradio as gr
 from pathlib import Path
 import os
-from app.app_layout import *
-from app.generate_method import *
+from app.AppLayout import *
+from app.GenerateMethod import *
 
 os.environ["HF_HOME"] = "/data/.huggingface"
 os.environ["TORCH_HOME"] = "/data/.cache/torch"
@@ -383,7 +383,7 @@ with gr.Blocks(js=force_light, theme=theme, css=custom_css) as inference:
                             examples=[
                                 [f"app/examples/mvr_examples/{file_num[i]}_img0.png", f"app/examples/mvr_examples/{file_num[i]}_img1.png", f"app/examples/mvr_examples/{file_num[i]}_img2.png", f"app/examples/mvr_examples/{file_num[i]}_img3.png"], 
                                 ],
-                            label=f"{i+1}"
+                            label=f"Example{i+1}"
                         )
 
                 
