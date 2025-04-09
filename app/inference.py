@@ -7,8 +7,8 @@ from diffusion.utils import export_edges
 from construct_brep import construct_brep_from_datanpz
 
 import torch
-from diffusion.inference_data_preprocessor import DataProcessor
-from diffusion.inference_model_director import ModelDirector
+from app.DataProcessor import DataProcessor
+from app.BuildingDirector import ModelDirector
 
 def inference(model_director: ModelDirector, input_files: list[Path | str], output_path: Path, seed: Optional[int]=None):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")

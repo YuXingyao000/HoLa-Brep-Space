@@ -1,6 +1,7 @@
 from typing import Optional, Callable
 from abc import ABC, abstractmethod
-from diffusion.inference_model_builder import ModelBuilder
+from app.ModelBuilder import ModelBuilder
+from diffusion.diffusion_model import Diffusion_condition_mvr
 
 class ModelDirector(ABC):
     def __init__(
@@ -89,3 +90,6 @@ class MVRDirector(ModelDirector):
     
     def get_generating_condition(self):
         return 'mvr'
+    def construct_model(self):
+        super().construct_model()
+        self._builder.set_up_model_template(Diffusion_condition_mvr)

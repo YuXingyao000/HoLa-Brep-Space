@@ -4,15 +4,22 @@ import open3d as o3d
 import torchvision.transforms as T
 from PIL import Image
 from pathlib import Path
-
+from abc import abstractmethod, ABC
 
 class DataProcessor():
     NUM_PROPOSALS = 32
     PC_DOWNSAMPLE_NUM = 4096
     
+    # def __init__(self, raw_data, device=None):
+    #     if device is None:
+    #         self._device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    #     else:
+    #         self._device = device
+    #     self.raw_data = raw_data
+    
     def __init__(self):
         self._device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
+    
     def process(self, condition: str, files: list):
         data = {
             "conditions": {}
@@ -56,32 +63,40 @@ class DataProcessor():
         img = img[None, None, :].repeat(self.NUM_PROPOSALS, 1, 1, 1, 1)
         return img 
             
-    def __get_point_cloud_tensor(self, input_file: Path | str) -> torch.Tensor:
-        # Read point cloud
-        pcd = o3d.io.read_point_cloud(str(input_file))
-        points = np.array(pcd.points)
-        
-        # Check normals
-        if pcd.has_normals():
-            normals = np.array(pcd.normals)
-        else:
-            normals = np.zeros_like(points)
-
-        # Concatenate points and normals
-        points = np.concatenate([self.__normalize_points(points), normals], axis=1)
-
-        # Downsample
-        index = np.random.choice(points.shape[0], self.PC_DOWNSAMPLE_NUM, replace=False)
-        points = points[index]
-
-        return torch.tensor(points, dtype=torch.float32).to(self._device)
+# class PointCloudProcessor(DataProcessor):
+#     '''
+#     Raw Data should be a Pathlike or str path, accept file path only
+#     '''
+#     def get_tensor(self):
+#         points_tensor = self._get_point_cloud_tensor(Path(self.raw_data))
+#         return {"points" : points_tensor[None, None, :, :].repeat(self.NUM_PROPOSALS, 1, 1, 1)}
     
-    def __normalize_points(self, points):
-        bbox_min = np.min(points, axis=0)
-        bbox_max = np.max(points, axis=0)
-        center = (bbox_min + bbox_max) / 2
-        points -= center
-        scale = np.max(bbox_max - bbox_min)
-        points /= scale
-        points *= 0.9 * 2
-        return points
+#     def _get_point_cloud_tensor(self, input_file: Path | str) -> torch.Tensor:
+#         # Read point cloud
+#         pcd = o3d.io.read_point_cloud(input_file)
+#         points = np.array(pcd.points)
+        
+#         # Check normals
+#         if pcd.has_normals():
+#             normals = np.array(pcd.normals)
+#         else:
+#             normals = np.zeros_like(points)
+
+#         # Concatenate points and normals
+#         points = np.concatenate([self._normalize_points(points), normals], axis=1)
+
+#         # Downsample
+#         index = np.random.choice(points.shape[0], self.PC_DOWNSAMPLE_NUM, replace=False)
+#         points = points[index]
+
+#         return torch.tensor(points, dtype=torch.float32).to(self._device)
+    
+#     def _normalize_points(self, points):
+#         bbox_min = np.min(points, axis=0)
+#         bbox_max = np.max(points, axis=0)
+#         center = (bbox_min + bbox_max) / 2
+#         points -= center
+#         scale = np.max(bbox_max - bbox_min)
+#         points /= scale
+#         points *= 0.9 * 2
+#         return points

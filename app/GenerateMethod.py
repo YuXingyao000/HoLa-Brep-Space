@@ -10,9 +10,9 @@ from typing import Callable, Tuple
 import gradio as gr
 from abc import ABC, abstractmethod
 
-import diffusion.inference
-from diffusion.inference_model_builder import ModelBuilder
-from diffusion.inference_model_director import *
+from app.inference import inference, inference_batch_postprocess
+from app.ModelBuilder import ModelBuilder
+from app.BuildingDirector import *
 
 def delegate_generate_method(radio_type: str, state: gr.BrowserState):
     method: GenerateMethod
@@ -106,14 +106,14 @@ def conditioned_generate(files: list, condition: str, generate_output:Path | str
     
     director = get_director(condition)
     
-    diffusion.inference.inference(
+    inference(
             model_director=director,
             input_files=[Path(file) for file in files],
             output_path=generate_output,
             seed=0
             )
     
-    diffusion.inference.inference_batch_postprocess(
+    inference.inference_batch_postprocess(
         file_dir=generate_output, 
         output_dir=postprocess_output, 
         num_cpus=2,
@@ -195,7 +195,7 @@ class UncondGenerateMethod(GenerateMethod):
                     shutil.rmtree(postprocess_output)
                     os.makedirs(postprocess_output, exist_ok=True)
 
-                diffusion.inference.inference_batch_postprocess(
+                inference_batch_postprocess(
                     file_dir=generate_output.as_posix(),
                     output_dir=postprocess_output.as_posix(),
                     num_cpus=2,
@@ -308,7 +308,7 @@ class SVRGenerateMethod(GenerateMethod):
 class MVRGenerateMethod(GenerateMethod):
     def get_generate_method(self):
         def generate_mvr(img1, img2, img3, img4, state: gr.BrowserState):
-            if img1 is None or img2 is None or img3 is None:
+            if img1 is None or img2 is None or img3 is None or img4 is None:
                 return gr.Model3D(), gr.Model3D(), gr.File(), gr.Files(), state
             try:
                 generate_output, postprocess_output, state = get_output_pathes(state, 'mvr')
