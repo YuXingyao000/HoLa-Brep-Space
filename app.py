@@ -96,18 +96,18 @@ BACKEND_CONDITION_DICT = {
 # Dynamically registered functions 
 def switch_model(user_state: dict, generate_mode: str,  model_index: int, offset: int):
     model_index =  (model_index + offset) % DEMO_NUM
-    
+    generate_mode = BACKEND_CONDITION_DICT[generate_mode]
     # Check if the condition has been generated
     if generate_mode not in user_state.keys():
-        return gr.update(), gr.update(), gr.update(), gr.update()
+        return model_index, gr.update(label=f'Wireframe{model_index + 1}'), gr.update(label=f'Solid{model_index + 1}'), gr.update(label=f'Models{model_index + 1}')
     
     # Check if model_index exceeds the number of current valid models 
     if (model_index + offset) % DEMO_NUM > len(user_state[generate_mode]):
-        return gr.update(), gr.update(), gr.update(), gr.update()
+        return model_index, gr.update(label=f'Wireframe{model_index + 1}'), gr.update(label=f'Solid{model_index + 1}'), gr.update(label=f'Models{model_index + 1}')
     
     wireframe_model = user_state[generate_mode][model_index][WIREFRAME_FILE]
     solid_model = user_state[generate_mode][model_index][SOLID_FILE]
-    return model_index, wireframe_model, solid_model, user_state[generate_mode][model_index]
+    return model_index, gr.Model3D(wireframe_model, label=f'Wireframe{model_index + 1}'), gr.Model3D(solid_model, label=f'Solid{model_index + 1}'), gr.Files(user_state[generate_mode][model_index], label=f'Models{model_index + 1}', interactive=False)
 
 def set_generating_type(mode):
     return gr.Text(mode, visible=False)
@@ -298,11 +298,11 @@ with gr.Blocks(js=force_light, theme=theme, css=custom_css) as inference:
                 
             last_button.click(
                 fn=switch_model,
-                inputs=[user_state, generating_type, model_index, gr.Number(1, visible=False)],
+                inputs=[user_state, generating_type, model_index, gr.Number(-1, visible=False)],
                 outputs=[model_index, model_wireframe, model_solid, download_files])
             next_button.click(
                 fn=switch_model,
-                inputs=[user_state, generating_type, model_index, gr.Number(-1, visible=False)],
+                inputs=[user_state, generating_type, model_index, gr.Number(1, visible=False)],
                 outputs=[model_index, model_wireframe, model_solid, download_files])
                 
     # Examples

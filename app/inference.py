@@ -8,7 +8,7 @@ from construct_brep import construct_brep_from_datanpz
 
 
 def inference_batch_postprocess(file_dir: Path ,output_dir: Path, num_cpus: int=4, drop_num: int=2, timeout: int=60):
-    print("Start post processing")
+    print("Start post-processing")
     
     if not ray.is_initialized():
         ray.init(
@@ -77,4 +77,4 @@ def inference_batch_postprocess(file_dir: Path ,output_dir: Path, num_cpus: int=
         else:
             success_count = 0
 
-    print("Done.")
+    print("Finished post-processing")

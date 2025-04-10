@@ -62,53 +62,57 @@ class UncondGeneratingMethod():
 
                 subprocess.run(command, check=True, env=env)
 
-                # Postprocess the generated model
+                # Post-process the generated model
                 postprocess_output = Path(state['user_output_dir']) / 'unconditional_post'
                 os.makedirs(postprocess_output, exist_ok=True)
                 if len(os.listdir(postprocess_output)) > 0:
                     shutil.rmtree(postprocess_output)
                     os.makedirs(postprocess_output, exist_ok=True)
 
+                gr.Info("Start post-processing.", title="Runtime Info")
                 inference_batch_postprocess(
                     file_dir=generate_output.as_posix(),
                     output_dir=postprocess_output.as_posix(),
                     num_cpus=2,
                     drop_num=0
                 )
-
-                model_folders = pick_valid_model_randomly(postprocess_output, seed)
-                for i, model_folder in enumerate(model_folders):
-                    if model_folder is None:
-                        if i == 0:
-                            gr.Warning("No valid model is generated! Please try again.", title="Postprocess Error")
-                        else:
-                            gr.Warning(f"Only {i} valid model is generated! Please try again.", title="Postprocess Error")
-
-                        return None, None, None, [], state
-                    edge = (postprocess_output / model_folder / 'debug_face_loop' / 'edge.obj').as_posix()
-                    solid = (postprocess_output / model_folder / 'recon_brep.stl').as_posix()
-                    step = (postprocess_output / model_folder / 'recon_brep.step').as_posix()
-                    state['Unconditional'][f'Model{i+1}'] = [edge, solid, step]
+                gr.Info("Finished post-processing!", title="Runtime Info")
+                valid_models = get_valid_models(postprocess_output)
+                
+                # Should have valid outputs
+                if len(valid_models) <= 0:
+                    raise UncondGeneraingException("No Valid Model Generated!")
+                
+                # Update the user state
+                state["uncond"] = list()
+                for i, model_number in enumerate(valid_models):
+                    edge = (postprocess_output / model_number / 'debug_face_loop' / 'edge.obj').as_posix() # Hard coding is not good.
+                    solid = (postprocess_output / model_number / 'recon_brep.stl').as_posix()
+                    step = (postprocess_output / model_number / 'recon_brep.step').as_posix()
+                    state["uncond"].append([edge, solid, step])
                     
-                if 'Model1' in state['Unconditional'].keys():
-                    return *state['Unconditional']['Model1'], state['Unconditional']['Model1'], state
-                else:
-                    return gr.Model3D(), gr.Model3D(), gr.File(), gr.Files(), state
-            except:
-                gr.Warning("Something bad happened. Please try some other models", title="Unknown Error")
-                return gr.Model3D(), gr.Model3D(), gr.File(), gr.Files(), state
+                gr.Info(f"{len(valid_models)} valid models generated!", title="Finished generating")
+                
+                edge_file = state["uncond"][0][0]
+                solid_file = state["uncond"][0][1]
+                step_file = state["uncond"][0][2]
+                return  edge_file, solid_file, step_file, state["uncond"][0], state
+            except UncondEmptyInputException as input_e:
+                gr.Warning(str(input_e), title="Empty Input")
+                
+            except UncondGeneraingException as generating_e:
+                gr.Warning(str(generating_e), title="No Valid Generation")
             
+            except Exception as e:
+                print(e)
+                gr.Warning("Something bad happened. Please try some other models", title="Unknown Error")
+            return gr.update(), gr.update(), gr.update(), gr.update(), state
+         
         return generate_uncond
         
-def pick_valid_model_randomly(postprocess_output: Path, seed: int =0, num=4,) -> Tuple[Path, Path, Path]:
+def get_valid_models(postprocess_output: Path) -> Tuple[Path, Path, Path]:
     output_folders = [model_folder for model_folder in os.listdir(postprocess_output) if 'success.txt' in os.listdir(postprocess_output / model_folder)]
-    if len(output_folders) <= 0:
-        return [None, None, None]
-    elif len(output_folders) <= num:
-        return [Path(output_folders[i]) for i in range(len(output_folders))] + [None for _ in range(num-len(output_folders))]
-    else:
-        random.seed(seed)
-        return [Path(output_folders[i]) for i in random.sample(range(len(output_folders)), num)]    
+    return output_folders  
 
 def check_user_output_dir(state: gr.BrowserState):
     if state['user_id'] is None:
@@ -117,3 +121,11 @@ def check_user_output_dir(state: gr.BrowserState):
         state['user_output_dir'] = f'./outputs/user_{str(state["user_id"])}'
     os.makedirs(state['user_output_dir'], exist_ok=True)
     return state 
+
+class UncondGeneraingException(Exception):
+    """Custom exception if generating failed."""
+    pass
+
+class UncondEmptyInputException(Exception):
+    """Custom exception if the input is empty."""
+    pass

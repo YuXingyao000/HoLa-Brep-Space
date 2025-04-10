@@ -51,7 +51,9 @@ class ConditionedGeneratingMethod():
                 model_builder = self.director.buider
 
                 # Should be refactored in the future since picking an output folder is not the responsibility of a model
-                diffusion_output_dir, postprocess_output_dir = self._get_output_dir(browser_state, self.director.get_generating_condition())
+                diffusion_output_dir = self._get_diffusion_output_dir(browser_state, self.director.get_generating_condition())
+                postprocess_output_dir = self._get_postprocess_output_dir(browser_state, self.director.get_generating_condition())
+                
                 model_builder.setup_output_dir(diffusion_output_dir)
                 model_builder.setup_seed(self.model_seed)
                 
@@ -84,6 +86,7 @@ class ConditionedGeneratingMethod():
                 # Post-Processing #
                 ###################
                 # Multi-thread preparation
+                gr.Info("Finished post-processing!", title="Runtime Info")
                 if not ray.is_initialized():
                     ray.init(
                         dashboard_host="0.0.0.0",
@@ -132,21 +135,19 @@ class ConditionedGeneratingMethod():
                     else:
                         success_count = 0
 
+                gr.Info("Finished post-processing!", title="Runtime Info")
                 # Get valid model serial numbers
-                valid_model_number = self._get_valid_model_number(
-                    postprocess_output_dir,
-                    num_to_pick=self.model_num_to_return
-                )
+                valid_models = self._get_valid_models(postprocess_output_dir)
                 
                 # Check if there's no valid output
-                self._postprocess_output_check(valid_model_number)
+                self._postprocess_output_check(valid_models)
                 
                 #####################
                 # Update User State #
                 #####################
-                browser_state = self._update_user_state(browser_state, postprocess_output_dir, valid_model_number)
+                browser_state = self._update_user_state(browser_state, postprocess_output_dir, valid_models)
                 
-                gr.Warning(f"{len(valid_model_number)} valid models generated!", title="Finish generating")
+                gr.Info(f"{len(valid_models)} valid models generated!", title="Finish generating")
                 condition = self.director.get_generating_condition()
                 
                 # Return the first model as the default demonstration
@@ -173,19 +174,19 @@ class ConditionedGeneratingMethod():
 
         return generating_method
     
-    def _update_user_state(self, browser_state, postprocess_output_dir, valid_model_number):
+    def _update_user_state(self, browser_state, postprocess_output_dir, valid_model):
         # Unstable. May be refactored in the future
         condition = self.director.get_generating_condition()
-        browser_state[condition] = []
-        for i, model_number in enumerate(valid_model_number):
-            edge = (postprocess_output_dir / model_number / 'debug_face_loop' / 'edge.obj').as_posix()
+        browser_state[condition] = list()
+        for i, model_number in enumerate(valid_model):
+            edge = (postprocess_output_dir / model_number / 'debug_face_loop' / 'edge.obj').as_posix() # Hard coding is not good.
             solid = (postprocess_output_dir / model_number / 'recon_brep.stl').as_posix()
             step = (postprocess_output_dir / model_number / 'recon_brep.step').as_posix()
             browser_state[condition].append([edge, solid, step])
         return browser_state
     
-    def _postprocess_output_check(self, valid_model_number):
-        if len(valid_model_number) <= 0:
+    def _postprocess_output_check(self, valid_model):
+        if len(valid_model) <= 0:
             raise GeneraingException("No Valid Model Generated!")
     
     def _empty_input_check(self, inputs):
@@ -200,27 +201,26 @@ class ConditionedGeneratingMethod():
             state_dict['user_output_dir'] = f'./outputs/user_{str(state_dict["user_id"])}'
         os.makedirs(state_dict['user_output_dir'], exist_ok=True)
         
-    def _get_valid_model_number(
-            self, 
-            postprocess_output: Path,
-        ):
-        # Get valid **model number** after postprocessing
+    def _get_valid_models(self, postprocess_output: Path):
+        # Get valid **model number** after post-processing
         output_folders = [model_folder for model_folder in os.listdir(postprocess_output) if 'success.txt' in os.listdir(postprocess_output / model_folder)]
         return output_folders
     
-    def _get_output_dir(self, state_dict, condition):
+    def _get_diffusion_output_dir(self, state_dict, condition):
         # Create and clean the diffusion output directory
         diffusion_output_dir = Path(state_dict['user_output_dir']) / condition
         if len(os.listdir(diffusion_output_dir)) > 0:
             shutil.rmtree(diffusion_output_dir)
         os.makedirs(diffusion_output_dir, exist_ok=True)
-
-        # Create and clean the postprocess output directory
+        return diffusion_output_dir
+        
+    def _get_postprocess_output_dir(self, state_dict, condition):
+        # Create and clean the post-process output directory
         postprocess_output_dir = Path(state_dict['user_output_dir']) / f'{condition}_post'
         if len(os.listdir(postprocess_output_dir)) > 0:
             shutil.rmtree(postprocess_output_dir)
         os.makedirs(postprocess_output_dir, exist_ok=True)
-        return diffusion_output_dir, postprocess_output_dir
+        return postprocess_output_dir
 
 class GeneraingException(Exception):
     """Custom exception if generating failed."""
