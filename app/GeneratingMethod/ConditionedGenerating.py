@@ -13,6 +13,9 @@ from construct_brep import construct_brep_from_datanpz
 from app.DataProcessor import DataProcessor
 from app.ModelDirector import ModelDirector
 
+_EDGE_FILE = 0
+_SOLID_FILE = 1
+_STEP_FILE = 2
 
 class ConditionedGeneratingMethod(): 
     def __init__(
@@ -47,7 +50,7 @@ class ConditionedGeneratingMethod():
                 model_builder = self.director.buider
 
                 # Should be refactored in the future since picking an output folder is not the responsibility of a model
-                diffusion_output_dir, postprocess_output_dir = self._get_output_dir(browser_state)
+                diffusion_output_dir, postprocess_output_dir = self._get_output_dir(browser_state, self.director.get_generating_condition())
                 model_builder.setup_output_dir(diffusion_output_dir)
                 model_builder.setup_seed(self.model_seed)
                 
@@ -117,11 +120,13 @@ class ConditionedGeneratingMethod():
                 
                 gr.Warning(f"{len(valid_model_number)} valid models generated!", title="Finish generating")
                 condition = self.director.get_generating_condition()
-                edge = browser_state[condition][0][0]
-                solid = browser_state[condition][0][1]
-                step = browser_state[condition][0][2]
                 
-                return browser_state, edge, solid, step,browser_state[condition][0]
+                # Return the first model as the default demonstration
+                edge_file = browser_state[condition][0][_EDGE_FILE]
+                solid_file = browser_state[condition][0][_SOLID_FILE]
+                step_file = browser_state[condition][0][_STEP_FILE]
+                
+                return browser_state, edge_file, solid_file, step_file, browser_state[condition][0]
             
             except EmptyInputException as input_e:
                 gr.Warning(str(input_e), title="Empty Input")
@@ -136,7 +141,7 @@ class ConditionedGeneratingMethod():
                 print(e)
                 gr.Warning("Something bad happened. Please try some other models", title="Unknown Error")
                 
-            return browser_state, None, None, []
+            return browser_state, gr.update(), gr.update(), gr.update(), gr.update()
 
         return generating_method
     

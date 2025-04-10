@@ -80,35 +80,34 @@ div[data-testid="markdown"] span p:not(:first-child) {
 """
 
 DEMO_NUM = 4
+WIREFRAME_FILE = 0
+SOLID_FILE = 1
+STEP_FILE = 2
+
+BACKEND_CONDITION_DICT = {
+    'Unconditional': 'uncond',
+    'Point Cloud' : 'pc',
+    'Text' : 'txt',
+    'Sketch' : 'sketch',
+    'SVR' : 'single_img',
+    'MVR': 'multi_img'
+}
+
 # Dynamically registered functions 
-def get_model(generate_mode: str, present_mode: str, model_index: int, user_state: dict):
-    models: dict = user_state[generate_mode]
-    if f"Model{model_index + 1}" not in models.keys():
-        if present_mode != "Downloads":
-            return gr.Model3D(label=f"{present_mode}{model_index + 1}",value='empty.obj',display_mode=present_mode.lower(), key=present_mode)
-        else:
-            return gr.Files(label=f"Models{model_index + 1}", value=["app/examples/empty_examples/sample.stl", "app/examples/empty_examples/sample.ply", "app/examples/empty_examples/sample.step"], interactive=False, key=present_mode)
-    else:
-        if present_mode == "Wireframe":
-            return gr.Model3D(label=f"{present_mode}{model_index + 1}",value=models[f'Model{model_index + 1}'][0],display_mode=present_mode.lower(), key=present_mode)
-        elif present_mode == "Solid":
-            return gr.Model3D(label=f"{present_mode}{model_index + 1}",value=models[f'Model{model_index + 1}'][1],display_mode=present_mode.lower(), key=present_mode)
-        else:
-            return gr.Files(label=f"Models{model_index + 1}", value=models[f'Model{model_index + 1}'], file_types=['.obj', '.stl', '.step'],interactive=False, key=present_mode)
-
-def get_last_model(generate_mode: str, present_mode: str,  model_index: int, user_state: dict):
-    model_index = (model_index - 1) % PRESENT_NUM
-    solid = get_model(generate_mode, "Solid", model_index, user_state)
-    wire = get_model(generate_mode, "Wireframe", model_index, user_state)
-    downloads = get_model(generate_mode, "Downloads", model_index, user_state)
-    return model_index, wire, solid, downloads
-
-def get_next_model(generate_mode: str, present_mode: str,  model_index: int, user_state: dict):
-    model_index = (model_index + 1) % PRESENT_NUM
-    solid = get_model(generate_mode, "Solid", model_index, user_state)
-    wire = get_model(generate_mode, "Wireframe", model_index, user_state)
-    downloads = get_model(generate_mode, "Downloads", model_index, user_state)
-    return model_index, wire, solid, downloads
+def switch_model(user_state: dict, generate_mode: str,  model_index: int, offset: int):
+    model_index =  (model_index + offset) % DEMO_NUM
+    
+    # Check if the condition has been generated
+    if generate_mode not in user_state.keys():
+        return gr.update(), gr.update(), gr.update(), gr.update()
+    
+    # Check if model_index exceeds the number of current valid models 
+    if (model_index + offset) % DEMO_NUM > len(user_state[generate_mode]):
+        return gr.update(), gr.update(), gr.update(), gr.update()
+    
+    wireframe_model = user_state[generate_mode][model_index][WIREFRAME_FILE]
+    solid_model = user_state[generate_mode][model_index][SOLID_FILE]
+    return model_index, wireframe_model, solid_model, user_state[generate_mode][model_index]
 
 def set_generating_type(mode):
     return gr.Text(mode, visible=False)
@@ -202,196 +201,197 @@ with gr.Blocks(js=force_light, theme=theme, css=custom_css) as inference:
                         outputs=[user_state, model_wireframe, model_solid, step_file, download_files]
                     )
                     
-    #             with gr.Tab("Sketch") as sketch_tab:
-    #                 sketch_layout = SketchLayout()
-    #                 sketch_layout.get_note()
-    #                 sketch_input_components = sketch_layout.get_input_components()
+                with gr.Tab("Sketch") as sketch_tab:
+                    sketch_layout = SketchLayout()
+                    sketch_layout.get_note()
+                    sketch_input_components = sketch_layout.get_input_components()
                     
-    #                 sketch_button = gr.Button("Generate")
-    #                 sketch_button.click(
-    #                     fn=delegate_generate_method(sketch_tab.label, user_state), 
-    #                     inputs=[*sketch_input_components, user_state],
-    #                     outputs=[model_wireframe, model_solid, step_file, download_files, user_state]
-    #                 )
+                    sketch_button = gr.Button("Generate")
+                    sketch_button.click(
+                        fn=ConditionedGeneratingMethod(SketchDirector(), SingleImageProcessor(), DEMO_NUM).generate(), 
+                        inputs=[user_state, *sketch_input_components],
+                        outputs=[user_state, model_wireframe, model_solid, step_file, download_files]
+                    )
                     
-    #             with gr.Tab("Text") as text_tab:
-    #                 text_layout = TextLayout()
-    #                 text_layout.get_note()
-    #                 text_input_components = text_layout.get_input_components()
+                with gr.Tab("Text") as text_tab:
+                    text_layout = TextLayout()
+                    text_layout.get_note()
+                    text_input_components = text_layout.get_input_components()
                     
-    #                 text_button = gr.Button("Generate")
-    #                 text_button.click(
-    #                     fn=delegate_generate_method(text_tab.label, user_state), 
-    #                     inputs=[*text_input_components, user_state],
-    #                     outputs=[model_wireframe, model_solid, step_file, download_files, user_state]
-    #                 )
+                    text_button = gr.Button("Generate")
+                    text_button.click(
+                        fn=ConditionedGeneratingMethod(TextDirector(), TextProcessor(), DEMO_NUM).generate(), 
+                        inputs=[user_state, *text_input_components],
+                        outputs=[user_state, model_wireframe, model_solid, step_file, download_files]
+                    )
                     
-    #             with gr.Tab("SVR") as svr_tab:
-    #                 svr_layout = SVRLayout()
-    #                 svr_layout.get_note()
-    #                 svr_input_components = svr_layout.get_input_components()
+                with gr.Tab("SVR") as svr_tab:
+                    svr_layout = SVRLayout()
+                    svr_layout.get_note()
+                    svr_input_components = svr_layout.get_input_components()
                     
-    #                 svr_button = gr.Button("Generate")
-    #                 svr_button.click(
-    #                     fn=delegate_generate_method(svr_tab.label, user_state), 
-    #                     inputs=[*svr_input_components, user_state],
-    #                     outputs=[model_wireframe, model_solid, step_file, download_files, user_state]
-    #                 )
+                    svr_button = gr.Button("Generate")
+                    svr_button.click(
+                        fn=ConditionedGeneratingMethod(SVRDirector(), SingleImageProcessor(), DEMO_NUM).generate(), 
+                        inputs=[user_state, *svr_input_components],
+                        outputs=[user_state, model_wireframe, model_solid, step_file, download_files]
+                    )
                     
-    #             with gr.Tab("MVR") as mvr_tab:
-    #                 mvr_layout = MVRLayout()
-    #                 mvr_layout.get_note()
-    #                 with gr.Row():
-    #                     mvr_input_components = mvr_layout.get_input_components()
-    #                 mvr_button = gr.Button("Generate")
-    #                 mvr_button.click(
-    #                     fn=delegate_generate_method(mvr_tab.label, user_state), 
-    #                     inputs=[*mvr_input_components, user_state],
-    #                     outputs=[model_wireframe, model_solid, step_file, download_files, user_state]
-    #                 )
+                with gr.Tab("MVR") as mvr_tab:
+                    mvr_layout = MVRLayout()
+                    mvr_layout.get_note()
+                    with gr.Row():
+                        mvr_input_components = mvr_layout.get_input_components()
+                    mvr_button = gr.Button("Generate")
+                    mvr_button.click(
+                        fn=ConditionedGeneratingMethod(MVRDirector(), MultiImageProcessor(), DEMO_NUM).generate(), 
+                        inputs=[user_state, *mvr_input_components],
+                        outputs=[user_state, model_wireframe, model_solid, step_file, download_files]
+                    )
                 
-    #             uncond_tab.select(fn=set_generating_type, inputs=gr.Text(uncond_tab.label, visible=False), outputs=generating_type)
-    #             pc_tab.select(fn=set_generating_type, inputs=gr.Text(pc_tab.label, visible=False), outputs=generating_type)
-    #             sketch_tab.select(fn=set_generating_type, inputs=gr.Text(sketch_tab.label, visible=False), outputs=generating_type)
-    #             svr_tab.select(fn=set_generating_type, inputs=gr.Text(svr_tab.label, visible=False), outputs=generating_type)
-    #             mvr_tab.select(fn=set_generating_type, inputs=gr.Text(mvr_tab.label, visible=False), outputs=generating_type)
-    #             text_tab.select(fn=set_generating_type, inputs=gr.Text(text_tab.label, visible=False), outputs=generating_type)
+                uncond_tab.select(fn=set_generating_type, inputs=gr.Text(uncond_tab.label, visible=False), outputs=generating_type)
+                pc_tab.select(fn=set_generating_type, inputs=gr.Text(pc_tab.label, visible=False), outputs=generating_type)
+                sketch_tab.select(fn=set_generating_type, inputs=gr.Text(sketch_tab.label, visible=False), outputs=generating_type)
+                svr_tab.select(fn=set_generating_type, inputs=gr.Text(svr_tab.label, visible=False), outputs=generating_type)
+                mvr_tab.select(fn=set_generating_type, inputs=gr.Text(mvr_tab.label, visible=False), outputs=generating_type)
+                text_tab.select(fn=set_generating_type, inputs=gr.Text(text_tab.label, visible=False), outputs=generating_type)
                     
-    #     # Output demonstration 
-    #     with gr.Column() as output_col:        
-    #         with gr.Tabs():
-    #             with gr.Tab("Solid") as solid_tab:
-    #                 model_solid.render()
-    #             with gr.Tab("Wireframe") as wireframe_tab:
-    #                 model_wireframe.render()
-    #             with gr.Tab("Download") as download_tab:
-    #                 step_file.render()
-    #                 download_files.render()
-    #                 gr.Markdown(
-    #                     value=
-    #                     """
-    #                     <h2>Citation</h2>
+        # Output demonstration 
+        with gr.Column() as output_col:        
+            with gr.Tabs():
+                with gr.Tab("Solid") as solid_tab:
+                    model_solid.render()
+                with gr.Tab("Wireframe") as wireframe_tab:
+                    model_wireframe.render()
+                with gr.Tab("Download") as download_tab:
+                    step_file.render()
+                    download_files.render()
+                    gr.Markdown(
+                        value=
+                        """
+                        <h2>Citation</h2>
                         
-    #                     If our work is helpful for your research or applications, please cite us via:
-    #                     <br>
-    #                     ```
-    #                     @article{HolaBRep25,
-    #                     title={HoLa: B-Rep Generation using a Holistic Latent Representation},
-    #                     author={Yilin Liu and Duoteng Xu and Xinyao Yu and Xiang Xu and Daniel Cohen-Or and Hao Zhang and Hui Huang},
-    #                     journal={ACM Transactions on Graphics (Proceedings of SIGGRAPH)},
-    #                     volume={44},
-    #                     number={4},
-    #                     year={2025},
-    #                     }
-    #                     ```
-    #                     """,
-    #                     height=300,
-    #                     )
+                        If our work is helpful for your research or applications, please cite us via:
+                        <br>
+                        ```
+                        @article{HolaBRep25,
+                        title={HoLa: B-Rep Generation using a Holistic Latent Representation},
+                        author={Yilin Liu and Duoteng Xu and Xinyao Yu and Xiang Xu and Daniel Cohen-Or and Hao Zhang and Hui Huang},
+                        journal={ACM Transactions on Graphics (Proceedings of SIGGRAPH)},
+                        volume={44},
+                        number={4},
+                        year={2025},
+                        }
+                        ```
+                        """,
+                        height=300,
+                        )
             
-    #         solid_tab.select(fn=set_demonstrating_type, inputs=gr.Text(solid_tab.label, visible=False))
-    #         wireframe_tab.select(fn=set_demonstrating_type, inputs=gr.Text(wireframe_tab.label, visible=False))
-    #         download_tab.select(fn=set_demonstrating_type, inputs=gr.Text(download_tab.label, visible=False))
+            solid_tab.select(fn=set_demonstrating_type, inputs=gr.Text(solid_tab.label, visible=False))
+            wireframe_tab.select(fn=set_demonstrating_type, inputs=gr.Text(wireframe_tab.label, visible=False))
+            download_tab.select(fn=set_demonstrating_type, inputs=gr.Text(download_tab.label, visible=False))
             
-    #         model_index = gr.Number(value=0, visible=False)
-    #         with gr.Row() as switch_row:
-    #             last_button = gr.Button("Last")
-    #             next_button = gr.Button("Next")
-    #             last_button.click(
-    #                 fn=get_last_model,
-    #                 inputs=[generating_type, gr.Text(demonstrating_type, visible=False), model_index, user_state],
-    #                 outputs=[model_index, model_wireframe, model_solid, download_files])
-    #             next_button.click(
-    #                 fn=get_next_model,
-    #                 inputs=[generating_type, gr.Text(demonstrating_type, visible=False), model_index, user_state],
-    #                 outputs=[model_index, model_wireframe, model_solid, download_files])
+            model_index = gr.Number(value=0, visible=False)
+            with gr.Row() as switch_row:
+                last_button = gr.Button("Last")
+                next_button = gr.Button("Next")
                 
-    # # Examples
-    # @gr.render(inputs=[generating_type], triggers=[generating_type.change, inference.load])
-    # def show_examples(generate_mode):
-    #     if generate_mode == "Unconditional":
-    #         pass
+            last_button.click(
+                fn=switch_model,
+                inputs=[user_state, generating_type, model_index, gr.Number(1, visible=False)],
+                outputs=[model_index, model_wireframe, model_solid, download_files])
+            next_button.click(
+                fn=switch_model,
+                inputs=[user_state, generating_type, model_index, gr.Number(-1, visible=False)],
+                outputs=[model_index, model_wireframe, model_solid, download_files])
+                
+    # Examples
+    @gr.render(inputs=[generating_type], triggers=[generating_type.change, inference.load])
+    def show_examples(generate_mode):
+        if generate_mode == "Unconditional":
+            pass
         
-    #     elif generate_mode == "Point Cloud":
-    #         pc_samples=[
-    #                         [Path("app/examples/pc_examples") / sample_number / "pc.png"] for sample_number in os.listdir("app/examples/pc_examples") if sample_number != "take_photo.py"
-    #                     ]
-    #         with gr.Row():
-    #             def dummy_pc_func(pic_path):
-    #                 return Path(pic_path[0]).with_suffix(".ply").as_posix()
-    #             for i in range(len(pc_samples)):
-    #                 with gr.Column(min_width=100):
-    #                     dummy_image = gr.Image(type="filepath", format="png", visible=False)
-    #                     point_cloud_data = gr.Dataset(
-    #                         label=f"Example{i+1}",
-    #                         components=[dummy_image],
-    #                         samples=[pc_samples[i]],
-    #                         layout="table"
-    #                     )
-    #                     point_cloud_data.click(dummy_pc_func, inputs=point_cloud_data, outputs=pc_input_components)
+        elif generate_mode == "Point Cloud":
+            pc_samples=[
+                            [Path("app/examples/pc_examples") / sample_number / "pc.png"] for sample_number in os.listdir("app/examples/pc_examples") if sample_number != "take_photo.py"
+                        ]
+            with gr.Row():
+                def dummy_pc_func(pic_path):
+                    return Path(pic_path[0]).with_suffix(".ply").as_posix()
+                for i in range(len(pc_samples)):
+                    with gr.Column(min_width=100):
+                        dummy_image = gr.Image(type="filepath", format="png", visible=False)
+                        point_cloud_data = gr.Dataset(
+                            label=f"Example{i+1}",
+                            components=[dummy_image],
+                            samples=[pc_samples[i]],
+                            layout="table"
+                        )
+                        point_cloud_data.click(dummy_pc_func, inputs=point_cloud_data, outputs=pc_input_components)
                         
-    #     elif generate_mode == "Text":
-    #         text_data = gr.Dataset(
-    #             components=text_input_components,
-    #             samples=[
-    #                 ["The object is a rectangular prism with two protruding L-shaped sections on opposite sides."],
-    #                 ["This design creates a rectangular plate with rounded edges. The plate measures about 0.3214 units in length, 0.75 units in width, and 0.0429 units in height. The rounded edges give the plate a smooth, aesthetically pleasing appearance."],
-    #                 ["The U-shaped bracket has a flat top and a curved bottom. The design begins by creating a new coordinate system with specific Euler angles and a translation vector. A two-dimensional sketch is then drawn, forming a complex shape with multiple lines and arcs. This sketch is scaled down, rotated, and translated to align with the coordinate system. The sketch is extruded to create a three-dimensional model. The final dimensions of the bracket are approximately 0.7 units in length, 0.75 units in width, and 0.19 units in height. The bracket is designed to integrate seamlessly with other components, providing a sturdy and functional structure."]
-    #                 ],
-    #             layout='table',
-    #             label="Examples",
-    #             headers=["Prompt"]
-    #         )
-    #         def dummy_func(text):
-    #             return gr.Text(text[0])
-    #         text_data.click(fn=dummy_func, inputs=text_data, outputs=text_input_components)
+        elif generate_mode == "Text":
+            text_data = gr.Dataset(
+                components=text_input_components,
+                samples=[
+                    ["The object is a rectangular prism with two protruding L-shaped sections on opposite sides."],
+                    ["This design creates a rectangular plate with rounded edges. The plate measures about 0.3214 units in length, 0.75 units in width, and 0.0429 units in height. The rounded edges give the plate a smooth, aesthetically pleasing appearance."],
+                    ["The U-shaped bracket has a flat top and a curved bottom. The design begins by creating a new coordinate system with specific Euler angles and a translation vector. A two-dimensional sketch is then drawn, forming a complex shape with multiple lines and arcs. This sketch is scaled down, rotated, and translated to align with the coordinate system. The sketch is extruded to create a three-dimensional model. The final dimensions of the bracket are approximately 0.7 units in length, 0.75 units in width, and 0.19 units in height. The bracket is designed to integrate seamlessly with other components, providing a sturdy and functional structure."]
+                    ],
+                layout='table',
+                label="Examples",
+                headers=["Prompt"]
+            )
+            def dummy_func(text):
+                return gr.Text(text[0])
+            text_data.click(fn=dummy_func, inputs=text_data, outputs=text_input_components)
             
-    #     elif generate_mode == "Sketch":
-    #         with gr.Row():
-    #             for i in range(12):
-    #                 with gr.Column(min_width=100):
-    #                     example = gr.Examples(
-    #                         inputs=sketch_input_components,
-    #                         examples=[
-    #                             [f"app/examples/img_examples/{i % 10 + 1}.png"]
-    #                             ],
-    #                         label=f"Example{i+1}"
-    #                         )
+        elif generate_mode == "Sketch":
+            with gr.Row():
+                for i in range(12):
+                    with gr.Column(min_width=100):
+                        example = gr.Examples(
+                            inputs=sketch_input_components,
+                            examples=[
+                                [f"app/examples/img_examples/{i % 10 + 1}.png"]
+                                ],
+                            label=f"Example{i+1}"
+                            )
                         
-    #     elif generate_mode == "SVR":
-    #         with gr.Row():
-    #             for i in range(12):
-    #                 with gr.Column(min_width=100):
-    #                     example = gr.Examples(
-    #                         inputs=svr_input_components,
-    #                         examples=[
-    #                             [f"app/examples/img_examples/{i % 10 + 1}.png"]
-    #                             ],
-    #                         label=f"Example{i+1}"
-    #                         )
+        elif generate_mode == "SVR":
+            with gr.Row():
+                for i in range(12):
+                    with gr.Column(min_width=100):
+                        example = gr.Examples(
+                            inputs=svr_input_components,
+                            examples=[
+                                [f"app/examples/img_examples/{i % 10 + 1}.png"]
+                                ],
+                            label=f"Example{i+1}"
+                            )
                        
-    #     elif generate_mode == "MVR":
-    #         with gr.Row():
-    #             for i in range(4):
-    #                 file_num = ["00000093", "00033625", "00052220", "00087329"]
-    #                 with gr.Column():
-    #                     example = gr.Examples(
-    #                         inputs=mvr_input_components,
-    #                         examples=[
-    #                             [f"app/examples/mvr_examples/{file_num[i]}_img0.png", f"app/examples/mvr_examples/{file_num[i]}_img1.png", f"app/examples/mvr_examples/{file_num[i]}_img2.png", f"app/examples/mvr_examples/{file_num[i]}_img3.png"], 
-    #                             ],
-    #                         label=f"Example{i+1}"
-    #                     )
+        elif generate_mode == "MVR":
+            with gr.Row():
+                for i in range(4):
+                    file_num = ["00000093", "00033625", "00052220", "00087329"]
+                    with gr.Column():
+                        example = gr.Examples(
+                            inputs=mvr_input_components,
+                            examples=[
+                                [f"app/examples/mvr_examples/{file_num[i]}_img0.png", f"app/examples/mvr_examples/{file_num[i]}_img1.png", f"app/examples/mvr_examples/{file_num[i]}_img2.png", f"app/examples/mvr_examples/{file_num[i]}_img3.png"], 
+                                ],
+                            label=f"Example{i+1}"
+                        )
 
                 
             
-    # gr.HTML(
-    #     """
-    #     <div style="text-align: center; margin-top: 20px;">
-    #         <a href="https://visitorbadge.io/status?path=http%3A%2F%2F127.0.0.1%3A7860%2F"><img src="https://api.visitorbadge.io/api/visitors?path=http%3A%2F%2F127.0.0.1%3A7860%2F&labelColor=%23d9e3f0&countColor=%23697689" />
-    #         </a>
-    #     </div>
-    #     """
-    # )
+    gr.HTML(
+        """
+        <div style="text-align: center; margin-top: 20px;">
+            <a href="https://visitorbadge.io/status?path=http%3A%2F%2F127.0.0.1%3A7860%2F"><img src="https://api.visitorbadge.io/api/visitors?path=http%3A%2F%2F127.0.0.1%3A7860%2F&labelColor=%23d9e3f0&countColor=%23697689" />
+            </a>
+        </div>
+        """
+    )
 
 if __name__ == "__main__":
     inference.launch(server_name="0.0.0.0", server_port=7860)

@@ -10,9 +10,9 @@ class MultiImageProcessor(ImageProcessor):
     def process_input_data(self, image_files : List[Path | str]):
         multi_imgs = None
         for one_imgage in image_files:            
-                single_img = self._get_img_tensor(Path(one_imgage))
+                single_img = self._get_img_tensor(Path(one_imgage))[None, None, ...]
                 if multi_imgs is None:
-                    multi_imgs = single_img[None, None, ...]
+                    multi_imgs = single_img
                 else:
                     multi_imgs = torch.cat((multi_imgs, single_img), axis=1)
         multi_imgs = multi_imgs.repeat(self.NUM_PROPOSALS, 1, 1, 1, 1)

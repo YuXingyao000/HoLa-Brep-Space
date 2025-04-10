@@ -3,4 +3,4 @@ from .MVRDirector import MVRDirector
 from .PointCloudDirector import PointCloudDirector
 from .SketchDirector import SketchDirector
 from .SVRDirector import SVRDirector
-from .TxtDirector import TxtDirector
+from .TextDirector import TextDirector

@@ -1,6 +1,6 @@
 from app.ModelDirector import ModelDirector
 
-class TxtDirector(ModelDirector):
+class TextDirector(ModelDirector):
     def get_ae_weights(self):
         return 'YuXingyao/HoLa-Brep/AE_deepcad_1100k.ckpt'
     
