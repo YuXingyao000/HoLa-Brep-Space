@@ -5,7 +5,7 @@ from pathlib import Path
 
 from construct_brep import construct_brep_from_datanpz
 
-
+# This file still exists just because a UNSPEAKABLE evil class depends on it
 
 def inference_batch_postprocess(file_dir: Path ,output_dir: Path, num_cpus: int=4, drop_num: int=2, timeout: int=60):
     print("Start post-processing")
@@ -22,24 +22,7 @@ def inference_batch_postprocess(file_dir: Path ,output_dir: Path, num_cpus: int=
     all_folders = sorted(os.listdir(file_dir))
     
     tasks = []
-    # (Deprecated!)
-    # Single-thread version
     
-    # for i, one_folder in enumerate(all_folders):
-    #     construct_brep_from_datanpz(
-    #         data_root=file_dir,
-    #         out_root=output_dir,
-    #         folder_name=one_folder,
-    #         v_drop_num=drop_num,
-    #         is_ray=False,
-    #         is_optimize_geom=False,
-    #         from_scratch=True,
-    #         isdebug=True,
-    #         is_save_data=True
-    #         )
-    
-    
-    # Multi-thread version
     for i, one_folder in enumerate(all_folders):
         tasks.append(
             construct_brep_from_datanpz_ray.remote(
