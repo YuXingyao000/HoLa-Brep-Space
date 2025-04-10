@@ -73,7 +73,7 @@ class UncondGeneratingMethod():
                     file_dir=generate_output.as_posix(),
                     output_dir=postprocess_output.as_posix(),
                     num_cpus=2,
-                    drop_num=3
+                    drop_num=0
                 )
 
                 model_folders = pick_valid_model_randomly(postprocess_output, seed)
