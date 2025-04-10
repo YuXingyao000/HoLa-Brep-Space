@@ -5,6 +5,7 @@ import uuid
 import torch
 import gradio as gr
 import numpy as np
+import ray
 
 from pathlib import Path
 
@@ -82,29 +83,56 @@ class ConditionedGeneratingMethod():
                 ###################
                 # Post-Processing #
                 ###################
+                # Multi-thread preparation
+                if not ray.is_initialized():
+                    ray.init(
+                        dashboard_host="0.0.0.0",
+                        dashboard_port=8080,
+                        num_cpus=2,
+                    )
+                
+                construct_brep_from_datanpz_ray = ray.remote(num_cpus=1, max_retries=0)(construct_brep_from_datanpz)
                 diffusion_results = sorted(os.listdir(diffusion_output_dir))
 
                 tasks = []
                 for i, model_number in enumerate(diffusion_results):
-                    construct_brep_from_datanpz(
-                        data_root=diffusion_output_dir,
-                        out_root=postprocess_output_dir,
-                        folder_name=model_number,
-                        v_drop_num=0,
-                        is_ray=False,
-                        is_optimize_geom=False,
-                        from_scratch=True,
-                        isdebug=True,
-                        is_save_data=True
+                    tasks.append(
+                        construct_brep_from_datanpz_ray.remote(
+                            data_root=diffusion_output_dir,
+                            out_root=postprocess_output_dir,
+                            folder_name=model_number,
+                            v_drop_num=0,
+                            use_cuda=False, 
+                            from_scratch=True,
+                            is_log=False, 
+                            is_ray=True, 
+                            is_optimize_geom=False, 
+                            isdebug=True,
+                            is_save_data=True
                         )
-                    success_count = 0
-                    for done_folder in list(postprocess_output_dir.iterdir()):
-                        output_files = os.listdir(postprocess_output_dir / done_folder)
-                        if 'success.txt' in output_files:
-                            success_count += 1
+                    )
+
+                results = []
+                success_count = 0
+                for task in tasks:
+                    try:
+                        results.append(ray.get(task, timeout=60))
+                        # Check whether the number of valid files is greater than 4
+                        for done_folder in list(postprocess_output_dir.iterdir()):
+                            output_files = os.listdir(postprocess_output_dir / done_folder)
+                            if 'success.txt' in output_files:
+                                success_count += 1
+                    except:
+                        results.append(None)
                     if success_count >= self.model_num_to_return:
+                        # Break the multi-thread if the condition is fulfilled
+                        if ray.is_initialized():
+                            ray.shutdown()
                         break
-                
+                    else:
+                        success_count = 0
+
+                # Get valid model serial numbers
                 valid_model_number = self._get_valid_model_number(
                     postprocess_output_dir,
                     num_to_pick=self.model_num_to_return
