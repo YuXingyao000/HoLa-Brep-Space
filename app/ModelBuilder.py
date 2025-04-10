@@ -36,15 +36,8 @@ class ModelBuilder():
     def setup_diffusion_weights(self, weights_path: Path | str):
         self._config["diffusion_weights"] = weights_path
         
-    def setup_condition(self, condition: list[str] | str):
-    # This should be refactored in the future as well. 
-    # Bad smell here!
-        if isinstance(condition, str):
-            if condition == "svr" or condition == "mvr":
-                condition = "single_img" if condition == "svr" else "multi_img"
-            self._config["condition"] = [condition]
-        else:
-            self._config["condition"] += condition
+    def setup_condition(self, condition: str):
+        self._config["condition"] = [condition]
        
     def setup_seed(self, seed: Optional[int] = None):
         if seed is not None:

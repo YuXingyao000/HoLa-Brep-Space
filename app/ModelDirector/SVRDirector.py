@@ -8,5 +8,5 @@ class SVRDirector(ModelDirector):
         return 'YuXingyao/HoLa-Brep/Diffusion_svr_sq30_1500k.ckpt'
     
     def get_generating_condition(self):
-        return 'svr'
+        return 'single_img'
     

@@ -10,7 +10,7 @@ class MVRDirector(ModelDirector):
         return 'YuXingyao/HoLa-Brep/Diffusion_mvr_sq30_800k.ckpt'
     
     def get_generating_condition(self):
-        return 'mvr'
+        return 'multi_img'
     def config_setup(self):
         # Bad smell, turly. Gonna refactor in the future... Hopefully...
         super().config_setup()
