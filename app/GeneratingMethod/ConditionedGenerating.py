@@ -24,12 +24,14 @@ class ConditionedGeneratingMethod():
         model_building_director: ModelDirector, 
         dataprocessor: DataProcessor, 
         model_num_to_return: int,
-        model_seed: int = 0
+        model_seed: int = 0,
+        output_main_dir: Path | str = Path('/data/outputs')
         ):
         self.director = model_building_director
         self.dataprocessor = dataprocessor
         self.model_num_to_return = model_num_to_return
         self.model_seed = model_seed
+        self.output_main_dir = output_main_dir
     
     def generate(self):
         def generating_method(browser_state: dict, *inputs):
@@ -201,7 +203,7 @@ class ConditionedGeneratingMethod():
         if state_dict['user_id'] is None:
             state_dict['user_id'] = uuid.uuid4()
         if state_dict['user_output_dir'] is None:
-            state_dict['user_output_dir'] = f'./outputs/user_{str(state_dict["user_id"])}'
+            state_dict['user_output_dir'] = Path(self.output_main_dir) / f"user_{state_dict['user_id']}"
         os.makedirs(state_dict['user_output_dir'], exist_ok=True)
         
     def _get_valid_models(self, postprocess_output: Path):

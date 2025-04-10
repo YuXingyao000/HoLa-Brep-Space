@@ -12,10 +12,13 @@ from app.inference import inference_batch_postprocess
 
 # Should be refactored in the future
 class UncondGeneratingMethod():
+    def __init__(self, output_main_dir=Path('/data/outputs')):
+        self.output_main_dir = output_main_dir
+
     def generate(self):
         def generate_uncond(seed, state: gr.BrowserState):
             try:
-                state = check_user_output_dir(state)
+                state = check_user_output_dir(state, self.output_main_dir)
 
                 generate_output = Path(state['user_output_dir']) / 'unconditional'
                 os.makedirs(generate_output, exist_ok=True)
@@ -93,7 +96,7 @@ class UncondGeneratingMethod():
                     step = (postprocess_output / model_number / 'recon_brep.step').as_posix()
                     state["uncond"].append([edge, solid, step])
                     
-                gr.Info(f"{len(valid_models)} valid models generated!", title="Finished generating")
+                gr.Info(f"{len(valid_models) if len(valid_models) < 4 else 4} valid models generated!", title="Finish generating")
                 
                 edge_file = state["uncond"][0][0]
                 solid_file = state["uncond"][0][1]
@@ -116,11 +119,11 @@ def get_valid_models(postprocess_output: Path) -> Tuple[Path, Path, Path]:
     output_folders = [model_folder for model_folder in os.listdir(postprocess_output) if 'success.txt' in os.listdir(postprocess_output / model_folder)]
     return output_folders  
 
-def check_user_output_dir(state: gr.BrowserState):
+def check_user_output_dir(state: dict, output_dir):
     if state['user_id'] is None:
         state['user_id'] = uuid.uuid4()
     if state['user_output_dir'] is None:
-        state['user_output_dir'] = f'./outputs/user_{str(state["user_id"])}'
+        state['user_output_dir'] = Path(output_dir) / f"user_{state['user_id']}"
     os.makedirs(state['user_output_dir'], exist_ok=True)
     return state 
 

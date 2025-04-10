@@ -381,11 +381,12 @@ with gr.Blocks(js=force_light, theme=theme, css=custom_css) as inference:
     gr.HTML(
         """
         <div style="text-align: center; margin-top: 20px;">
-            <a href="https://visitorbadge.io/status?path=http%3A%2F%2F127.0.0.1%3A7860%2F"><img src="https://api.visitorbadge.io/api/visitors?path=http%3A%2F%2F127.0.0.1%3A7860%2F&labelColor=%23d9e3f0&countColor=%23697689" />
+            <a href="https://visitorbadge.io/status?path=https%3A%2F%2Fhuggingface.co%2Fspaces%2FYuXingyao%2FHoLa-BRep">
+                <img src="https://api.visitorbadge.io/api/visitors?path=https%3A%2F%2Fhuggingface.co%2Fspaces%2FYuXingyao%2FHoLa-BRep&labelColor=%23d9e3f0&countColor=%23555555" />
             </a>
         </div>
         """
     )
 
 if __name__ == "__main__":
-    inference.launch(server_name="0.0.0.0", server_port=7860)
+    inference.launch(allowed_paths=['/data/outputs'], server_name="0.0.0.0", server_port=7860)
