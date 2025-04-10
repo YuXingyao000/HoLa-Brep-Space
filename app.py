@@ -111,9 +111,7 @@ def switch_model(user_state: dict, generate_mode: str,  model_index: int, offset
 
 def set_generating_type(mode):
     return gr.Text(mode, visible=False)
-    
-def set_demonstrating_type(mode):
-    return gr.Text(mode, visible=False)
+
 
 # Declarations for pre-rendering
 model_solid = gr.Model3D(label=f'Solid1', value='empty.obj', key="Solid")
@@ -124,7 +122,7 @@ download_files = gr.Files(label=f"Models1", value=["app/examples/empty_examples/
 input_tab = gr.Tabs()
 
 generating_type = gr.Text("Unconditional",visible=False)
-demonstrating_type = gr.Text("Solid", visible=False)
+
 
 # Main body
 with gr.Blocks(js=force_light, theme=theme, css=custom_css) as inference:
@@ -170,7 +168,6 @@ with gr.Blocks(js=force_light, theme=theme, css=custom_css) as inference:
         })
 
     generating_type.render()
-    demonstrating_type.render()
     
     with gr.Row():
         # Input Column
@@ -287,9 +284,6 @@ with gr.Blocks(js=force_light, theme=theme, css=custom_css) as inference:
                         height=300,
                         )
             
-            solid_tab.select(fn=set_demonstrating_type, inputs=gr.Text(solid_tab.label, visible=False))
-            wireframe_tab.select(fn=set_demonstrating_type, inputs=gr.Text(wireframe_tab.label, visible=False))
-            download_tab.select(fn=set_demonstrating_type, inputs=gr.Text(download_tab.label, visible=False))
             
             model_index = gr.Number(value=0, visible=False)
             with gr.Row() as switch_row:
@@ -372,7 +366,7 @@ with gr.Blocks(js=force_light, theme=theme, css=custom_css) as inference:
         elif generate_mode == "MVR":
             with gr.Row():
                 for i in range(4):
-                    file_num = ["00000093", "00033625", "00052220", "00087329"]
+                    file_num = ["00053073", "00033625", "00052220", "00039769"]
                     with gr.Column():
                         example = gr.Examples(
                             inputs=mvr_input_components,

@@ -10,7 +10,7 @@ Raw Data should be a Pathlike or str path, accept file path only
 class PointCloudProcessor(DataProcessor):
     PC_DOWNSAMPLE_NUM = 4096
     def process_input_data(self, pc_file_path):
-        points_tensor = self._get_point_cloud_tensor(Path(pc_file_path))
+        points_tensor = self._get_point_cloud_tensor(Path(pc_file_path[0]))
         return {"points" : points_tensor[None, None, :, :].repeat(self.NUM_PROPOSALS, 1, 1, 1)}
     
     def _get_point_cloud_tensor(self, input_file: Path | str) -> torch.Tensor:

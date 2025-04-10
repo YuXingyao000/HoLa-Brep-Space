@@ -63,6 +63,7 @@ class ConditionedGeneratingMethod():
                 #############
                 # Inference #
                 #############
+                gr.Info("Start diffusing", title="Runtime Info")
                 with torch.no_grad():
                     pred_results = model.inference(self.dataprocessor.NUM_PROPOSALS, device, v_data=tensor_data, v_log=True)
 
@@ -81,12 +82,13 @@ class ConditionedGeneratingMethod():
                         pred_edge                   = result["pred_edge"],
                         pred_edge_face_connectivity = result["pred_edge_face_connectivity"],
                     )
+                gr.Info("Finished diffusing", title="Runtime Info")
                 
                 ###################
                 # Post-Processing #
                 ###################
                 # Multi-thread preparation
-                gr.Info("Finished post-processing!", title="Runtime Info")
+                gr.Info("Start post-processing!", title="Runtime Info")
                 if not ray.is_initialized():
                     ray.init(
                         dashboard_host="0.0.0.0",
@@ -147,7 +149,8 @@ class ConditionedGeneratingMethod():
                 #####################
                 browser_state = self._update_user_state(browser_state, postprocess_output_dir, valid_models)
                 
-                gr.Info(f"{len(valid_models)} valid models generated!", title="Finish generating")
+                # Multi-thread processing may return valid models more than 4 
+                gr.Info(f"{len(valid_models) if len(valid_models) < 4 else 4} valid models generated!", title="Finish generating")
                 condition = self.director.get_generating_condition()
                 
                 # Return the first model as the default demonstration
@@ -209,17 +212,17 @@ class ConditionedGeneratingMethod():
     def _get_diffusion_output_dir(self, state_dict, condition):
         # Create and clean the diffusion output directory
         diffusion_output_dir = Path(state_dict['user_output_dir']) / condition
+        os.makedirs(diffusion_output_dir, exist_ok=True)
         if len(os.listdir(diffusion_output_dir)) > 0:
             shutil.rmtree(diffusion_output_dir)
-        os.makedirs(diffusion_output_dir, exist_ok=True)
         return diffusion_output_dir
         
     def _get_postprocess_output_dir(self, state_dict, condition):
         # Create and clean the post-process output directory
         postprocess_output_dir = Path(state_dict['user_output_dir']) / f'{condition}_post'
+        os.makedirs(postprocess_output_dir, exist_ok=True)
         if len(os.listdir(postprocess_output_dir)) > 0:
             shutil.rmtree(postprocess_output_dir)
-        os.makedirs(postprocess_output_dir, exist_ok=True)
         return postprocess_output_dir
 
 class GeneraingException(Exception):

@@ -3,11 +3,11 @@ import numpy as np
 import torchvision.transforms as T
 
 from pathlib import Path
-from typing import List
+from typing import Tuple
 from app.DataProcessor.ImageProcessor import ImageProcessor
 
 class MultiImageProcessor(ImageProcessor):
-    def process_input_data(self, image_files : List[Path | str]):
+    def process_input_data(self, image_files: Tuple[str]):
         multi_imgs = None
         for one_imgage in image_files:            
                 single_img = self._get_img_tensor(Path(one_imgage))[None, None, ...]

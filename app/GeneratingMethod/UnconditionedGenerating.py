@@ -59,9 +59,11 @@ class UncondGeneratingMethod():
                     ]
                 env = os.environ.copy()
                 env["CUDA_VISIBLE_DEVICES"] = "0"
-
+                
+                gr.Info("Start diffusing", title="Runtime Info")
                 subprocess.run(command, check=True, env=env)
-
+                gr.Info("Finished diffusing", title="Runtime Info")
+                
                 # Post-process the generated model
                 postprocess_output = Path(state['user_output_dir']) / 'unconditional_post'
                 os.makedirs(postprocess_output, exist_ok=True)
