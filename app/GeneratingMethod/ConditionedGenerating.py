@@ -6,6 +6,7 @@ import torch
 import gradio as gr
 import numpy as np
 import ray
+import time
 
 from pathlib import Path
 
@@ -45,7 +46,6 @@ class ConditionedGeneratingMethod():
                 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
                 # Process user input data
-                # TODO: Refactor DataProcessor!!!
                 tensor_data = self.dataprocessor.process(inputs)
 
                 # Basic configuration of a model
@@ -101,55 +101,62 @@ class ConditionedGeneratingMethod():
                 construct_brep_from_datanpz_ray = ray.remote(num_cpus=1, max_retries=0)(construct_brep_from_datanpz)
                 diffusion_results = sorted(os.listdir(diffusion_output_dir))
 
-                tasks = []
-                for i, model_number in enumerate(diffusion_results):
-                    tasks.append(
-                        construct_brep_from_datanpz_ray.remote(
-                            data_root=diffusion_output_dir,
-                            out_root=postprocess_output_dir,
-                            folder_name=model_number,
-                            v_drop_num=0,
-                            use_cuda=False, 
-                            from_scratch=True,
-                            is_log=False, 
-                            is_ray=True, 
-                            is_optimize_geom=False, 
-                            isdebug=True,
-                            is_save_data=True
-                        )
+                tasks = [
+                    construct_brep_from_datanpz_ray.remote(
+                        data_root=diffusion_output_dir,
+                        out_root=postprocess_output_dir,
+                        folder_name=model_number,
+                        v_drop_num=0,
+                        use_cuda=False, 
+                        from_scratch=True,
+                        is_log=False, 
+                        is_ray=True, 
+                        is_optimize_geom=False, 
+                        isdebug=True,
+                        is_save_data=True
                     )
+                    for model_number in diffusion_results
+                ]
 
                 results = []
                 success_count = 0
-                for task in tasks:
-                    try:
-                        results.append(ray.get(task, timeout=60))
-                        # Check whether the number of valid files is greater than 4
-                        for done_folder in list(postprocess_output_dir.iterdir()):
-                            output_files = os.listdir(postprocess_output_dir / done_folder)
-                            if 'success.txt' in output_files:
-                                success_count += 1
-                    except:
-                        results.append(None)
-                    if success_count >= self.model_num_to_return:
-                        # Break the multi-thread if the condition is fulfilled
-                        if ray.is_initialized():
-                            ray.shutdown()
-                        break
-                    else:
-                        success_count = 0
+                while tasks and success_count < self.model_num_to_return:
+                    done_ids, tasks = ray.wait(tasks, num_returns=1, timeout=60)
+                    for done_id in done_ids:
+                        try:
+                            result = ray.get(done_id)
+                            results.append(result)
+
+                            # Delay just a bit to ensure file handles are released
+                            time.sleep(0.2)
+
+                            # Check for 'success.txt' in output folders
+                            for done_folder in postprocess_output_dir.iterdir():
+                                output_files = os.listdir(postprocess_output_dir / done_folder)
+                                if 'success.txt' in output_files:
+                                    success_count += 1
+
+                        except Exception as e:
+                            print(f"Task failed or timed out: {e}")
+                            results.append(None)
+
+                        if success_count >= self.model_num_to_return:
+                            # Make sure the files are written successfully
+                            time.sleep(1.0)
+                            break
 
                 gr.Info("Finished post-processing!", title="Runtime Info")
                 # Get valid model serial numbers
                 valid_models = self._get_valid_models(postprocess_output_dir)
                 
-                # Check if there's no valid output
-                self._postprocess_output_check(valid_models)
-                
                 #####################
                 # Update User State #
                 #####################
                 browser_state = self._update_user_state(browser_state, postprocess_output_dir, valid_models)
+                
+                # Check if there's no valid output
+                self._postprocess_output_check(valid_models)
+                
                 
                 # Multi-thread processing may return valid models more than 4 
                 gr.Info(f"{len(valid_models) if len(valid_models) < 4 else 4} valid models generated!", title="Finish generating")
@@ -169,7 +176,10 @@ class ConditionedGeneratingMethod():
                 gr.Warning(str(generating_e), title="No Valid Generation")
                 
             except UnicodeEncodeError as uni_error:
-                gr.Warning("We sincerely apologize, but we currently only support English.", title="UnicodeEncodeError")
+                gr.Warning("We sincerely apologize, but we currently only support English.", title="English Support Only")
+                
+            except FileNotFoundError as file_e:
+                gr.Warning("The operation is too frequent!", title="Frequent Operation")
                 
             except Exception as e:
                 print(e)

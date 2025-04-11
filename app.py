@@ -99,11 +99,11 @@ def switch_model(user_state: dict, generate_mode: str,  model_index: int, offset
     generate_mode = BACKEND_CONDITION_DICT[generate_mode]
     # Check if the condition has been generated
     if generate_mode not in user_state.keys():
-        return model_index, gr.update(label=f'Wireframe{model_index + 1}'), gr.update(label=f'Solid{model_index + 1}'), gr.update(label=f'Models{model_index + 1}')
+        return model_index, gr.update(value='empty.obj', label=f'Wireframe{model_index + 1}'), gr.update(value='empty.obj', label=f'Solid{model_index + 1}'), gr.update( value=["app/examples/empty_examples/sample.stl", "app/examples/empty_examples/sample.ply", "app/examples/empty_examples/sample.step"], label=f'Models{model_index + 1}')
     
     # Check if model_index exceeds the number of current valid models 
-    if (model_index + offset) % DEMO_NUM > len(user_state[generate_mode]):
-        return model_index, gr.update(label=f'Wireframe{model_index + 1}'), gr.update(label=f'Solid{model_index + 1}'), gr.update(label=f'Models{model_index + 1}')
+    if model_index >= len(user_state[generate_mode]):
+        return model_index, gr.update(value='empty.obj', label=f'Wireframe{model_index + 1}'), gr.update(value='empty.obj', label=f'Solid{model_index + 1}'), gr.update( value=["app/examples/empty_examples/sample.stl", "app/examples/empty_examples/sample.ply", "app/examples/empty_examples/sample.step"], label=f'Models{model_index + 1}')
     
     wireframe_model = user_state[generate_mode][model_index][WIREFRAME_FILE]
     solid_model = user_state[generate_mode][model_index][SOLID_FILE]

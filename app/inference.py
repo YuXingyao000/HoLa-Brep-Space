@@ -1,6 +1,6 @@
 import os
 import ray
-from tqdm import tqdm
+import time
 from pathlib import Path
 
 from construct_brep import construct_brep_from_datanpz
@@ -21,43 +21,47 @@ def inference_batch_postprocess(file_dir: Path ,output_dir: Path, num_cpus: int=
     
     all_folders = sorted(os.listdir(file_dir))
     
-    tasks = []
-    
-    for i, one_folder in enumerate(all_folders):
-        tasks.append(
-            construct_brep_from_datanpz_ray.remote(
-                file_dir, 
-                output_dir,
-                one_folder,
-                v_drop_num=drop_num,
-                use_cuda=False, 
-                from_scratch=True,
-                is_log=False, 
-                is_ray=True, 
-                is_optimize_geom=False, 
-                isdebug=True,
-                is_save_data=True
-            )
+    tasks = [
+        construct_brep_from_datanpz_ray.remote(
+            data_root=file_dir,
+            out_root=output_dir,
+            folder_name=model_number,
+            v_drop_num=0,
+            use_cuda=False, 
+            from_scratch=True,
+            is_log=False, 
+            is_ray=True, 
+            is_optimize_geom=False, 
+            isdebug=True,
+            is_save_data=True
         )
+        for model_number in all_folders
+    ]
+
         
     results = []
     success_count = 0
-    for task in tqdm(tasks):
-        try:
-            results.append(ray.get(task, timeout=timeout))
-            # Check whether the number of valid files is greater than 4
-            for done_folder in os.listdir(output_dir):
-                output_files = os.listdir(Path(output_dir) / Path(done_folder))
-                if 'success.txt' in output_files:
-                    success_count += 1
-                    # ray.kill()
-        except:
-            results.append(None)
-        if success_count >= 4:
-            if ray.is_initialized():
-                ray.shutdown()
-            break
-        else:
-            success_count = 0
+    while tasks and success_count < 4:
+        done_ids, tasks = ray.wait(tasks, num_returns=1, timeout=60)
+        for done_id in done_ids:
+            try:
+                result = ray.get(done_id)
+                results.append(result)
+                
+                # Delay just a bit to ensure file handles are released
+                time.sleep(0.2)
+                # Check for 'success.txt' in output folders
+                for done_folder in Path(output_dir).iterdir():
+                    output_files = os.listdir(Path(output_dir) / done_folder)
+                    if 'success.txt' in output_files:
+                        success_count += 1
+                        
+            except Exception as e:
+                print(f"Task failed or timed out: {e}")
+                results.append(None)
+            if success_count >= 4:
+                # Make sure the files are written successfully
+                time.sleep(1.0)
+                break
 
     print("Finished post-processing")
