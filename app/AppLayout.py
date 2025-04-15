@@ -7,7 +7,11 @@ from abc import ABC, abstractmethod
 # Tab Interface
 class AppLayout(ABC):
     @abstractmethod
-    def get_note(self) -> gr.Markdown:
+    def get_English_note(self) -> gr.Markdown:
+        pass
+    
+    @abstractmethod
+    def get_Chinese_note(self):
         pass
     
     @abstractmethod
@@ -18,12 +22,21 @@ class AppLayout(ABC):
 # Concrete Implementation
 class UncondLayout(AppLayout):
 
-    def get_note(self):
+    def get_English_note(self):
         return gr.Markdown(
             """
             **Note:**
             
             - Randomly generate 4 models
+            """
+            )
+    
+    def get_Chinese_note(self):
+        return gr.Markdown(
+            """
+            **说明:**
+            
+            - 随机生成4个模型
             """
             )
 
@@ -41,12 +54,24 @@ class UncondLayout(AppLayout):
 
 class TextLayout(AppLayout):
 
-    def get_note(self):
+    def get_English_note(self):
         return gr.Markdown(
                         """
                         **Note:**
                         
                         - Text prompts describe the shape and features of an object using natural language, providing an intuitive way to generate 3D models. 
+                        - HoLa-BRep supports generating B-rep models based on text prompts that align with your descriptions. 
+                        - Input your text description to generate 4 possible B-rep results and experience seamless conversion from language to CAD models.
+                        
+                        <br>
+                        """
+                    )
+    def get_Chinese_note(self):
+        return gr.Markdown(
+                        """
+                        **说明:**
+                        
+                        - 一些说明
                         - HoLa-BRep supports generating B-rep models based on text prompts that align with your descriptions. 
                         - Input your text description to generate 4 possible B-rep results and experience seamless conversion from language to CAD models.
                         
@@ -62,10 +87,21 @@ class TextLayout(AppLayout):
 
 class PCLayout(AppLayout):
 
-    def get_note(self):
+    def get_English_note(self):
         return gr.Markdown(
                         """
                         **Note:**
+                        - Point clouds are sets of 3D coordinates obtained from 3D scanning or other processes, typically used to represent the shape of an object. 
+                        - HoLa-BRep can transform point cloud data into complete B-rep models. By encoding the geometric and topological information of the point cloud, the generated B-rep results accurately capture the original shape's details and provide high-quality CAD models. 
+                        - Upload your point cloud file to explore 4 plausible B-rep results generated from it.
+                        
+                        <br>
+                        """
+                    )
+    def get_Chinese_note(self):
+        return gr.Markdown(
+                        """
+                        **说明:**
                         - Point clouds are sets of 3D coordinates obtained from 3D scanning or other processes, typically used to represent the shape of an object. 
                         - HoLa-BRep can transform point cloud data into complete B-rep models. By encoding the geometric and topological information of the point cloud, the generated B-rep results accurately capture the original shape's details and provide high-quality CAD models. 
                         - Upload your point cloud file to explore 4 plausible B-rep results generated from it.
@@ -85,7 +121,7 @@ class PCLayout(AppLayout):
 
 class SketchLayout(AppLayout):
 
-    def get_note(self):
+    def get_English_note(self):
         return gr.Markdown(
                         """
                         **Note:**
@@ -97,6 +133,18 @@ class SketchLayout(AppLayout):
                         """
                     )
 
+    def get_Chinese_note(self):
+        return gr.Markdown(
+                        """
+                        **说明:**
+                        - Point clouds are sets of 3D coordinates obtained from 3D scanning or other processes, typically used to represent the shape of an object. 
+                        - HoLa-BRep can transform point cloud data into complete B-rep models. By encoding the geometric and topological information of the point cloud, the generated B-rep results accurately capture the original shape's details and provide high-quality CAD models. 
+                        - Upload your point cloud file to explore 4 plausible B-rep results generated from it.
+                        
+                        <br>
+                        """
+                    )
+    
     def get_input_components(self) -> List[gr.Component]:
         return [
             gr.Image(
@@ -110,7 +158,7 @@ class SketchLayout(AppLayout):
 
 class SVRLayout(AppLayout):
 
-    def get_note(self):
+    def get_English_note(self):
         return gr.Markdown(
                         """
                         **Note:**
@@ -121,6 +169,18 @@ class SVRLayout(AppLayout):
                         """
                     )
 
+    def get_Chinese_note(self):
+        return gr.Markdown(
+                        """
+                        **说明:**
+                        - Point clouds are sets of 3D coordinates obtained from 3D scanning or other processes, typically used to represent the shape of an object. 
+                        - HoLa-BRep can transform point cloud data into complete B-rep models. By encoding the geometric and topological information of the point cloud, the generated B-rep results accurately capture the original shape's details and provide high-quality CAD models. 
+                        - Upload your point cloud file to explore 4 plausible B-rep results generated from it.
+                        
+                        <br>
+                        """
+                    )
+    
     def get_input_components(self) -> List[gr.Component]:
         return [
             gr.Image(
@@ -134,7 +194,7 @@ class SVRLayout(AppLayout):
 
 class MVRLayout(AppLayout):
 
-    def get_note(self):
+    def get_English_note(self):
         return gr.Markdown(
                         """
                         **Note:**
@@ -142,6 +202,18 @@ class MVRLayout(AppLayout):
                         - Multi-view images provide multiple photos of an object from different angles, offering a more comprehensive description of the object's overall shape and structure. 
                         - HoLa-BRep supports extracting rich geometric features from multi-view images and converts them into high-quality B-rep models. 
                         - Upload multiple images to explore 4 possible B-rep results and experience efficient conversion from multi-view images to CAD models.
+                        
+                        <br>
+                        """
+                    )
+    
+    def get_Chinese_note(self):
+        return gr.Markdown(
+                        """
+                        **说明:**
+                        - Point clouds are sets of 3D coordinates obtained from 3D scanning or other processes, typically used to represent the shape of an object. 
+                        - HoLa-BRep can transform point cloud data into complete B-rep models. By encoding the geometric and topological information of the point cloud, the generated B-rep results accurately capture the original shape's details and provide high-quality CAD models. 
+                        - Upload your point cloud file to explore 4 plausible B-rep results generated from it.
                         
                         <br>
                         """

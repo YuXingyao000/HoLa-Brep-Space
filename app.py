@@ -43,6 +43,22 @@ button[role="tab"] {
 div[role="tablist"] {
     height: var(--size-12);
 }
+
+#top-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+#button-group {
+    display: flex;
+    gap: 10px;
+}
+.small-button {
+    max-width: 80px;
+    padding: 6px 10px;
+    font-size: 14px;
+}
+
 @media (min-width: 1024px) {
     div[role="tablist"] {
         /* 电脑端居中 */
@@ -116,6 +132,11 @@ def switch_model(user_state: dict, generate_mode: str,  model_index: int, offset
 def set_generating_type(mode):
     return gr.Text(mode, visible=False)
 
+def make_Chinese_descriptions(*text_component):
+    return title_cn, description_cn, UncondLayout().get_Chinese_note(), PCLayout().get_Chinese_note(), SketchLayout().get_Chinese_note(), TextLayout().get_Chinese_note(), SVRLayout().get_Chinese_note(), MVRLayout().get_Chinese_note()
+
+def make_English_descriptions(*text_component):
+    return title_en, description_en, UncondLayout().get_English_note(), PCLayout().get_English_note(), SketchLayout().get_English_note(), TextLayout().get_English_note(), SVRLayout().get_English_note(), MVRLayout().get_English_note()
 
 # Declarations for pre-rendering
 model_solid = gr.Model3D(label=f'Solid1', value='empty.obj', key="Solid")
@@ -127,11 +148,7 @@ input_tab = gr.Tabs()
 
 generating_type = gr.Text("Unconditional",visible=False)
 
-
-# Main body
-with gr.Blocks(js=force_light, theme=theme, css=custom_css) as inference:
-
-    gr.Markdown(
+title_en = gr.Markdown(
         """
         <style>
             .container-title{
@@ -154,8 +171,31 @@ with gr.Blocks(js=force_light, theme=theme, css=custom_css) as inference:
         </h1>
         """
     )
+title_cn = gr.Markdown(
+        """
+        <style>
+            .container-title{
+                display: block;
+                position: relative;
+                text-align: center;
+                text-rendering: optimizelegibility;
+            }
+        </style>        
+        <h1 class="container-title">
+            <p class='title1' style='font-size: 100px; text-align: center;'> 
+            HoLa-BRep 
+            </p> 
+            <p class='title2' style='font-size: 25px; text-align: center;'>
+            Holistic Latent Representation for BRep Generation
+            </sp>
+            <p class='title3' style='font-size: 20px; text-align: center;'>
+            (深圳大学可视计算研究中心)
+            </sp>
+        </h1>
+        """
+    )
 
-    gr.Markdown(
+description_en = gr.Markdown(
             """
             # <h2>What is HoLa-BRep</h2>
             HoLa-BRep contains a BRep VAE to encode a BRep model's topological and geometric information into a unified, holistic latent space and a latent diffusion model to generate holistic latent from multiple modalities. It can turn point clouds, single-view images, multi-view images, 2D sketches, or text prompts into solid BRep models. 
@@ -165,6 +205,42 @@ with gr.Blocks(js=force_light, theme=theme, css=custom_css) as inference:
             + Feel free to explore the generated BRep models by rotating, zooming, and panning the 3D viewer, or **download** either the wireframe, surface mesh, or solid BRep model as OBJ or STEP files.
             """
         )
+description_cn = gr.Markdown(
+            """
+            # <h2>What is HoLa-BRep</h2>
+            这里是中文
+            # <h2>How to use it</h2>
+            + 中文描述
+            + 中文描述
+            + 中文描述
+            """
+        )
+descriptions = []
+
+# Main body
+with gr.Blocks(js=force_light, theme=theme, css=custom_css) as inference:
+    with gr.Row(elem_id="top-row"):
+        gr.HTML(
+                    """
+                    <div style="text-align: left;">
+                        <a href="https://visitorbadge.io/status?path=https%3A%2F%2Fhuggingface.co%2Fspaces%2FYuXingyao%2FHoLa-BRep">
+                            <img src="https://api.visitorbadge.io/api/visitors?path=https%3A%2F%2Fhuggingface.co%2Fspaces%2FYuXingyao%2FHoLa-BRep&labelColor=%23d9e3f0&countColor=%23555555" />
+                        </a>
+                    </div>
+                    """
+                )
+        
+        with gr.Row(elem_id="button-group"):
+            btn_cn = gr.Button("中文", elem_classes="small-button")
+            btn_en = gr.Button("English", elem_classes="small-button")
+            btn_cn.click(fn=make_Chinese_descriptions, inputs=descriptions, outputs=descriptions)
+            btn_en.click(fn=make_English_descriptions, inputs=descriptions, outputs=descriptions)
+                
+    title_en.render()
+    descriptions.append(title_en)
+    
+    description_en.render()
+    descriptions.append(description_en)
     
     user_state = gr.BrowserState({
             "user_id" : None,
@@ -179,7 +255,8 @@ with gr.Blocks(js=force_light, theme=theme, css=custom_css) as inference:
             with gr.Tabs() as input_tab:
                 with gr.Tab("Unconditional") as uncond_tab: 
                     uncond_layout = UncondLayout()
-                    uncond_layout.get_note()
+                    uncond_description = uncond_layout.get_English_note()
+                    descriptions.append(uncond_description)
                     uncond_input_components = uncond_layout.get_input_components()
                     
                     uncond_button = gr.Button("Generate")
@@ -191,9 +268,9 @@ with gr.Blocks(js=force_light, theme=theme, css=custom_css) as inference:
                     
                 with gr.Tab("Point Cloud") as pc_tab:
                     pc_layout = PCLayout()
-                    pc_layout.get_note()
+                    pc_description = pc_layout.get_English_note()
+                    descriptions.append(pc_description)
                     pc_input_components = pc_layout.get_input_components()
-                    
                     
                     pc_button = gr.Button("Generate")
                     pc_button.click(
@@ -204,7 +281,8 @@ with gr.Blocks(js=force_light, theme=theme, css=custom_css) as inference:
                     
                 with gr.Tab("Sketch") as sketch_tab:
                     sketch_layout = SketchLayout()
-                    sketch_layout.get_note()
+                    sketch_description = sketch_layout.get_English_note()
+                    descriptions.append(sketch_description)
                     sketch_input_components = sketch_layout.get_input_components()
                     
                     sketch_button = gr.Button("Generate")
@@ -216,7 +294,8 @@ with gr.Blocks(js=force_light, theme=theme, css=custom_css) as inference:
                     
                 with gr.Tab("Text") as text_tab:
                     text_layout = TextLayout()
-                    text_layout.get_note()
+                    text_description = text_layout.get_English_note()
+                    descriptions.append(text_description)
                     text_input_components = text_layout.get_input_components()
                     
                     text_button = gr.Button("Generate")
@@ -228,7 +307,8 @@ with gr.Blocks(js=force_light, theme=theme, css=custom_css) as inference:
                     
                 with gr.Tab("SVR") as svr_tab:
                     svr_layout = SVRLayout()
-                    svr_layout.get_note()
+                    svr_description = svr_layout.get_English_note()
+                    descriptions.append(svr_description)
                     svr_input_components = svr_layout.get_input_components()
                     
                     svr_button = gr.Button("Generate")
@@ -240,7 +320,8 @@ with gr.Blocks(js=force_light, theme=theme, css=custom_css) as inference:
                     
                 with gr.Tab("MVR") as mvr_tab:
                     mvr_layout = MVRLayout()
-                    mvr_layout.get_note()
+                    mvr_description = mvr_layout.get_English_note()
+                    descriptions.append(mvr_description)
                     with gr.Accordion("Some MVR input notification:", open=False):
                         gr.Markdown(
                             """
@@ -337,6 +418,7 @@ with gr.Blocks(js=force_light, theme=theme, css=custom_css) as inference:
                         point_cloud_data.click(dummy_pc_func, inputs=point_cloud_data, outputs=pc_input_components)
                         
         elif generate_mode == "Text":
+            gr.Info("We apologize that text-conditioned generation only supports English now", title="Text Input")
             text_data = gr.Dataset(
                 components=text_input_components,
                 samples=[
@@ -390,16 +472,6 @@ with gr.Blocks(js=force_light, theme=theme, css=custom_css) as inference:
                         )
 
                 
-            
-    gr.HTML(
-        """
-        <div style="text-align: center; margin-top: 20px;">
-            <a href="https://visitorbadge.io/status?path=https%3A%2F%2Fhuggingface.co%2Fspaces%2FYuXingyao%2FHoLa-BRep">
-                <img src="https://api.visitorbadge.io/api/visitors?path=https%3A%2F%2Fhuggingface.co%2Fspaces%2FYuXingyao%2FHoLa-BRep&labelColor=%23d9e3f0&countColor=%23555555" />
-            </a>
-        </div>
-        """
-    )
 
 if __name__ == "__main__":
     inference.launch(allowed_paths=['/data/outputs'], server_name="0.0.0.0", server_port=7860)
