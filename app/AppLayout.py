@@ -118,10 +118,6 @@ class SVRLayout(AppLayout):
                         - A single-view image provides a flat view of an object, containing limited geometric and topological information. 
                         - HoLa-BRep extracts shape features from single-view images and converts them into complete B-rep models. 
                         - Using the powerful generative capabilities of the model, you can obtain 4 plausible B-rep results inferred from the single-view image, showcasing various potential shape details. Upload an image to start generating.
-                        
-                        <br>
-                        <br>
-                        <br>
                         """
                     )
 

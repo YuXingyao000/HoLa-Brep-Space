@@ -107,8 +107,12 @@ def switch_model(user_state: dict, generate_mode: str,  model_index: int, offset
     
     wireframe_model = user_state[generate_mode][model_index][WIREFRAME_FILE]
     solid_model = user_state[generate_mode][model_index][SOLID_FILE]
+    if not os.path.exists(wireframe_model) or os.path.exists(solid_model):
+        gr.Warning("The operation is too frequent!", title="Frequent Operation")
+        return gr.update(), gr.update(), gr.update(), gr.update()
     return model_index, gr.Model3D(wireframe_model, label=f'Wireframe{model_index + 1}'), gr.Model3D(solid_model, label=f'Solid{model_index + 1}'), gr.Files(user_state[generate_mode][model_index], label=f'Models{model_index + 1}', interactive=False)
-
+        
+    
 def set_generating_type(mode):
     return gr.Text(mode, visible=False)
 
@@ -237,6 +241,15 @@ with gr.Blocks(js=force_light, theme=theme, css=custom_css) as inference:
                 with gr.Tab("MVR") as mvr_tab:
                     mvr_layout = MVRLayout()
                     mvr_layout.get_note()
+                    with gr.Accordion("Some MVR input notification:", open=False):
+                        gr.Markdown(
+                            """
+                            - Input 1:
+                            - Input 2:
+                            - Input 3:
+                            - Input 4:
+                            """
+                            )
                     with gr.Row():
                         mvr_input_components = mvr_layout.get_input_components()
                     mvr_button = gr.Button("Generate")
@@ -341,12 +354,12 @@ with gr.Blocks(js=force_light, theme=theme, css=custom_css) as inference:
             
         elif generate_mode == "Sketch":
             with gr.Row():
-                for i in range(12):
+                for i in range(10):
                     with gr.Column(min_width=100):
                         example = gr.Examples(
                             inputs=sketch_input_components,
                             examples=[
-                                [f"app/examples/img_examples/{i % 10 + 1}.png"]
+                                [f"app/examples/sketch_examples/{i + 1}.png"]
                                 ],
                             label=f"Example{i+1}"
                             )
@@ -358,7 +371,7 @@ with gr.Blocks(js=force_light, theme=theme, css=custom_css) as inference:
                         example = gr.Examples(
                             inputs=svr_input_components,
                             examples=[
-                                [f"app/examples/img_examples/{i % 10 + 1}.png"]
+                                [f"app/examples/svr_examples/{i + 1}.png"]
                                 ],
                             label=f"Example{i+1}"
                             )

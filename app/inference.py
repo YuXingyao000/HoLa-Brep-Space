@@ -61,7 +61,7 @@ def inference_batch_postprocess(file_dir: Path ,output_dir: Path, num_cpus: int=
                 results.append(None)
             if success_count >= 4:
                 # Make sure the files are written successfully
-                time.sleep(1.0)
+                time.sleep(5.0)
                 break
 
     print("Finished post-processing")

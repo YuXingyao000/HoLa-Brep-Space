@@ -142,7 +142,7 @@ class ConditionedGeneratingMethod():
 
                         if success_count >= self.model_num_to_return:
                             # Make sure the files are written successfully
-                            time.sleep(1.0)
+                            time.sleep(5.0)
                             break
 
                 gr.Info("Finished post-processing!", title="Runtime Info")
