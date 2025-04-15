@@ -164,6 +164,12 @@ title_en = gr.Markdown(
             </p> 
             <p class='title2' style='font-size: 25px; text-align: center;'>
             Holistic Latent Representation for BRep Generation
+            <p class='title2' style='font-size: 25px; text-align: center;'>
+            ACM Trans. on Graphics (SIGGRAPH 2025)
+            </p>
+            <p class='title2' style='font-size: 25px; text-align: center;'>
+            Yilin Liu, Duoteng Xu, Xinyao Yu, Xiang Xu, Daniel Cohen-Or, Hao Zhang, Hui Huang*
+            </p>
             </sp>
             <p class='title3' style='font-size: 20px; text-align: center;'>
             (Visual Computing Research Center, Shenzhen University)
@@ -187,6 +193,12 @@ title_cn = gr.Markdown(
             </p> 
             <p class='title2' style='font-size: 25px; text-align: center;'>
             Holistic Latent Representation for BRep Generation
+            <p class='title2' style='font-size: 25px; text-align: center;'>
+            ACM Trans. on Graphics (SIGGRAPH 2025)
+            </p>
+            <p class='title2' style='font-size: 25px; text-align: center;'>
+            刘奕林, 许铎腾, 余星耀, 徐翔, Daniel Cohen-Or, 张皓, 黄惠*
+            </p>
             </sp>
             <p class='title3' style='font-size: 20px; text-align: center;'>
             (深圳大学可视计算研究中心)
@@ -198,21 +210,26 @@ title_cn = gr.Markdown(
 description_en = gr.Markdown(
             """
             # <h2>What is HoLa-BRep</h2>
-            HoLa-BRep contains a BRep VAE to encode a BRep model's topological and geometric information into a unified, holistic latent space and a latent diffusion model to generate holistic latent from multiple modalities. It can turn point clouds, single-view images, multi-view images, 2D sketches, or text prompts into solid BRep models. 
+            HoLa-BRep is a generative model that produces CAD models in boundary representation (BRep) based on various conditions, including point cloud, single-view image, multi-view images, single-view sketch or text description.
+            It contains **1 unified** BRep variational encoder (VAE) to encode a BRep model's topological and geometric information into a holistic latent space, and a latent diffusion model (LDM) to generate such latent from multiple modalities. 
+            Compared with the state-of-the-art method, HoLa-BRep only has 1 unified VAE and the corresponding latent space and 1 LDM for generation, so it is easier to train the model without any inter-dependency of the model. This is extremely useful when incorporating more modalities and even mix-modality training.
+
             # <h2>How to use it</h2>
             + Please refer to the example below for more details. You can also select the desired **modality** below and upload your own data. 
             + We generate **4** plausible BRep models for each input and visualize them in the 3D viewer. 
-            + Feel free to explore the generated BRep models by rotating, zooming, and panning the 3D viewer, or **download** either the wireframe, surface mesh, or solid BRep model as OBJ or STEP files.
+            + Feel free to explore the generated BRep models by rotating, zooming, and panning the 3D viewer, or **download** either the wireframe, surface mesh, or solid BRep model as STL or STEP files.
             """
         )
 description_cn = gr.Markdown(
             """
             # <h2>What is HoLa-BRep</h2>
-            这里是中文
+            HoLa-BRep 是一个生成模型，能够基于多种条件（包括点云、单视图图像、多视图图像、单视图草图或文本描述）生成以边界表示（BRep）形式呈现的 CAD 模型。
+            它包含 1 个统一的 BRep 变分编码器（VAE），用于将 BRep 模型的拓扑与几何信息编码至结构化潜空间；以及 1 个潜在扩散模型（LDM），用于从多模态输入生成此类潜在表示。
+            与最先进方法相比，HoLa-BRep 仅需 1 个统一 VAE 及其对应潜在空间、1 个 LDM 即可完成生成，因此无需处理模型间的相互依赖，训练过程更为简便。这一特性在整合更多模态甚至进行混合模态训练时具有显著优势。
             # <h2>How to use it</h2>
-            + 中文描述
-            + 中文描述
-            + 中文描述
+            + 更多细节请参考下方示例。您也可在下述选项中选取所需**模态**并上传自定义数据。
+            + 我们为每个输入生成**4**个合理的 BRep 模型，并在 3D 查看器中可视化呈现。
+            + 可通过旋转、缩放、平移 3D 查看器自由探索生成的 BRep 模型，或**下载**线框、曲面网格、实体 BRep 模型（格式为 STL 或 STEP 文件）。
             """
         )
 descriptions = []
@@ -322,15 +339,9 @@ with gr.Blocks(js=force_light, theme=theme, css=custom_css) as inference:
                     mvr_layout = MVRLayout()
                     mvr_description = mvr_layout.get_English_note()
                     descriptions.append(mvr_description)
-                    with gr.Accordion("Some MVR input notification:", open=False):
-                        gr.Markdown(
-                            """
-                            - Input 1:
-                            - Input 2:
-                            - Input 3:
-                            - Input 4:
-                            """
-                            )
+                    with gr.Accordion("MVR input notification:", open=False):
+                        gr.Image(value='app\examples\mvr.jpg',show_download_button=False, show_label=False,show_share_button=False,interactive=False)
+
                     with gr.Row():
                         mvr_input_components = mvr_layout.get_input_components()
                     mvr_button = gr.Button("Generate")
@@ -357,26 +368,7 @@ with gr.Blocks(js=force_light, theme=theme, css=custom_css) as inference:
                 with gr.Tab("Download") as download_tab:
                     step_file.render()
                     download_files.render()
-                    gr.Markdown(
-                        value=
-                        """
-                        <h2>Citation</h2>
-                        
-                        If our work is helpful for your research or applications, please cite us via:
-                        <br>
-                        ```
-                        @article{HolaBRep25,
-                        title={HoLa: B-Rep Generation using a Holistic Latent Representation},
-                        author={Yilin Liu and Duoteng Xu and Xinyao Yu and Xiang Xu and Daniel Cohen-Or and Hao Zhang and Hui Huang},
-                        journal={ACM Transactions on Graphics (Proceedings of SIGGRAPH)},
-                        volume={44},
-                        number={4},
-                        year={2025},
-                        }
-                        ```
-                        """,
-                        height=300,
-                        )
+                    
             
             
             model_index = gr.Number(value=0, visible=False)
@@ -418,7 +410,6 @@ with gr.Blocks(js=force_light, theme=theme, css=custom_css) as inference:
                         point_cloud_data.click(dummy_pc_func, inputs=point_cloud_data, outputs=pc_input_components)
                         
         elif generate_mode == "Text":
-            gr.Info("We apologize that text-conditioned generation only supports English now", title="Text Input")
             text_data = gr.Dataset(
                 components=text_input_components,
                 samples=[
@@ -470,8 +461,27 @@ with gr.Blocks(js=force_light, theme=theme, css=custom_css) as inference:
                                 ],
                             label=f"Example{i+1}"
                         )
-
+    gr.Markdown(
+        value=
+        """
+        <h2>Citation</h2>
+        
+        If our work is helpful for your research or applications, please cite us via:
+        <br>
+        ```
+        @article{HolaBRep25,
+        title={HoLa: B-Rep Generation using a Holistic Latent Representation},
+        author={Yilin Liu and Duoteng Xu and Xinyao Yu and Xiang Xu and Daniel Cohen-Or and Hao Zhang and Hui Huang},
+        journal={ACM Transactions on Graphics (Proceedings of SIGGRAPH)},
+        volume={44},
+        number={4},
+        year={2025},
+        }
+        ```
+        """,
+        height=300,
+        )
                 
 
 if __name__ == "__main__":
-    inference.launch(allowed_paths=['/data/outputs'], server_name="0.0.0.0", server_port=7860)
+    inference.launch(allowed_paths=['/data/outputs'], server_port=7860)
