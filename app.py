@@ -132,12 +132,65 @@ def switch_model(user_state: dict, generate_mode: str,  model_index: int, offset
 def set_generating_type(mode):
     return gr.Text(mode, visible=False)
 
-def make_Chinese_descriptions(*text_component):
-    return title_cn, description_cn, UncondLayout().get_Chinese_note(), PCLayout().get_Chinese_note(), SketchLayout().get_Chinese_note(), TextLayout().get_Chinese_note(), SVRLayout().get_Chinese_note(), MVRLayout().get_Chinese_note()
+def make_Chinese_descriptions():
+    return (title_cn, 
+            description_cn, 
+            UncondLayout().get_Chinese_note(), 
+            PCLayout().get_Chinese_note(), 
+            SketchLayout().get_Chinese_note(), 
+            TextLayout().get_Chinese_note(), 
+            SVRLayout().get_Chinese_note(), 
+            MVRLayout().get_Chinese_note(),
+            gr.update(label="无条件"),
+            gr.update(label="点云"),
+            gr.update(label="草图"),
+            gr.update(label="文本"),
+            gr.update(label="单视图"),
+            gr.update(label="多视图"),
+            gr.update(label="多视图输入注意事项："),
+            gr.update(value="生成"),
+            gr.update(value="生成"),
+            gr.update(value="生成"),
+            gr.update(value="生成"),
+            gr.update(value="生成"),
+            gr.update(value="生成"),
+            gr.update(value="上一个"),
+            gr.update(value="下一个"),
+            gr.update(label="实体"),
+            gr.update(label="线框"),
+            gr.update(label="下载"),
+            citation_cn
+    )
 
-def make_English_descriptions(*text_component):
-    return title_en, description_en, UncondLayout().get_English_note(), PCLayout().get_English_note(), SketchLayout().get_English_note(), TextLayout().get_English_note(), SVRLayout().get_English_note(), MVRLayout().get_English_note()
-
+def make_English_descriptions():
+    return (title_en, 
+            description_en, 
+            UncondLayout().get_English_note(), 
+            PCLayout().get_English_note(), 
+            SketchLayout().get_English_note(), 
+            TextLayout().get_English_note(), 
+            SVRLayout().get_English_note(), 
+            MVRLayout().get_English_note(),
+            gr.update(label="Unconditional"),
+            gr.update(label="Point Cloud"),
+            gr.update(label="Sketch"),
+            gr.update(label="Text"),
+            gr.update(label="SVR"),
+            gr.update(label="MVR"),
+            gr.update(label="MVR input notification:"),
+            gr.update(value="generate"),
+            gr.update(value="generate"),
+            gr.update(value="generate"),
+            gr.update(value="generate"),
+            gr.update(value="generate"),
+            gr.update(value="generate"),
+            gr.update(value="Last"),
+            gr.update(value="Next"),
+            gr.update(label="Solid"),
+            gr.update(label="Wireframe"),
+            gr.update(label="Download"),
+            citation_en
+    )
 # Declarations for pre-rendering
 model_solid = gr.Model3D(label=f'Solid1', value='empty.obj', key="Solid")
 model_wireframe = gr.Model3D(label=f'Wireframe1', value='empty.obj', key="Wireframe")
@@ -209,29 +262,73 @@ title_cn = gr.Markdown(
 
 description_en = gr.Markdown(
             """
-            # <h2>What is HoLa-BRep</h2>
+            # <h2>What is HoLa-BRep?</h2>
             HoLa-BRep is a generative model that produces CAD models in boundary representation (BRep) based on various conditions, including point cloud, single-view image, multi-view images, single-view sketch or text description.
             It contains **1 unified** BRep variational encoder (VAE) to encode a BRep model's topological and geometric information into a holistic latent space, and a latent diffusion model (LDM) to generate such latent from multiple modalities. 
             Compared with the state-of-the-art method, HoLa-BRep only has 1 unified VAE and the corresponding latent space and 1 LDM for generation, so it is easier to train the model without any inter-dependency of the model. This is extremely useful when incorporating more modalities and even mix-modality training.
 
-            # <h2>How to use it</h2>
+            # <h2>How to use it?</h2>
             + Please refer to the example below for more details. You can also select the desired **modality** below and upload your own data. 
             + We generate **4** plausible BRep models for each input and visualize them in the 3D viewer. 
-            + Feel free to explore the generated BRep models by rotating, zooming, and panning the 3D viewer, or **download** either the wireframe, surface mesh, or solid BRep model as STL or STEP files.
+            + Feel free to explore the generated BRep models by rotating, zooming, and panning the 3D viewer, or **download** either the wireframe, surface mesh, or solid BRep model as OBJ, STL, or STEP files.
             """
         )
 description_cn = gr.Markdown(
             """
-            # <h2>What is HoLa-BRep</h2>
+            # <h2>HoLa-BRep是什么？</h2>
             HoLa-BRep 是一个生成模型，能够基于多种条件（包括点云、单视图图像、多视图图像、单视图草图或文本描述）生成以边界表示（BRep）形式呈现的 CAD 模型。
             它包含 1 个统一的 BRep 变分编码器（VAE），用于将 BRep 模型的拓扑与几何信息编码至结构化潜空间；以及 1 个潜在扩散模型（LDM），用于从多模态输入生成此类潜在表示。
             与最先进方法相比，HoLa-BRep 仅需 1 个统一 VAE 及其对应潜在空间、1 个 LDM 即可完成生成，因此无需处理模型间的相互依赖，训练过程更为简便。这一特性在整合更多模态甚至进行混合模态训练时具有显著优势。
-            # <h2>How to use it</h2>
+            # <h2>如何使用？</h2>
             + 更多细节请参考下方示例。您也可在下述选项中选取所需**模态**并上传自定义数据。
             + 我们为每个输入生成**4**个合理的 BRep 模型，并在 3D 查看器中可视化呈现。
-            + 可通过旋转、缩放、平移 3D 查看器自由探索生成的 BRep 模型，或**下载**线框、曲面网格、实体 BRep 模型（格式为 STL 或 STEP 文件）。
+            + 可通过旋转、缩放、平移 3D 查看器自由探索生成的 BRep 模型，或**下载**线框、曲面网格、实体 BRep 模型（格式为 OBJ、 STL 或 STEP 文件）。
             """
         )
+
+citation_en = gr.Markdown(
+        value=
+        """
+        <h2>Citation</h2>
+        
+        If our work is helpful for your research or applications, please cite us via:
+        <br>
+        ```
+        @article{HolaBRep25,
+        title={HoLa: B-Rep Generation using a Holistic Latent Representation},
+        author={Yilin Liu and Duoteng Xu and Xinyao Yu and Xiang Xu and Daniel Cohen-Or and Hao Zhang and Hui Huang},
+        journal={ACM Transactions on Graphics (Proceedings of SIGGRAPH)},
+        volume={44},
+        number={4},
+        year={2025},
+        }
+        ```
+        """,
+        height=300,
+        )
+
+citation_cn = gr.Markdown(
+        value=
+        """
+        <h2>引用</h2>
+        
+        如果我们的工作对您的研究或者应用有帮助，请通过以下方式进行引用：
+        <br>
+        
+        ```
+        @article{HolaBRep25,
+        title={HoLa: B-Rep Generation using a Holistic Latent Representation},
+        author={Yilin Liu and Duoteng Xu and Xinyao Yu and Xiang Xu and Daniel Cohen-Or and Hao Zhang and Hui Huang},
+        journal={ACM Transactions on Graphics (Proceedings of SIGGRAPH)},
+        volume={44},
+        number={4},
+        year={2025},
+        }
+        ```
+        """,
+        height=300,
+        )
+
 descriptions = []
 
 # Main body
@@ -250,8 +347,8 @@ with gr.Blocks(js=force_light, theme=theme, css=custom_css) as inference:
         with gr.Row(elem_id="button-group"):
             btn_cn = gr.Button("中文", elem_classes="small-button")
             btn_en = gr.Button("English", elem_classes="small-button")
-            btn_cn.click(fn=make_Chinese_descriptions, inputs=descriptions, outputs=descriptions)
-            btn_en.click(fn=make_English_descriptions, inputs=descriptions, outputs=descriptions)
+            btn_cn.click(fn=make_Chinese_descriptions, outputs=descriptions)
+            btn_en.click(fn=make_English_descriptions, outputs=descriptions)
                 
     title_en.render()
     descriptions.append(title_en)
@@ -339,7 +436,7 @@ with gr.Blocks(js=force_light, theme=theme, css=custom_css) as inference:
                     mvr_layout = MVRLayout()
                     mvr_description = mvr_layout.get_English_note()
                     descriptions.append(mvr_description)
-                    with gr.Accordion("MVR input notification:", open=False):
+                    with gr.Accordion("MVR input notification:", open=False) as mvr_notification:
                         gr.Image(value='app\examples\mvr.jpg',show_download_button=False, show_label=False,show_share_button=False,interactive=False)
 
                     with gr.Row():
@@ -357,7 +454,22 @@ with gr.Blocks(js=force_light, theme=theme, css=custom_css) as inference:
                 svr_tab.select(fn=set_generating_type, inputs=gr.Text(svr_tab.label, visible=False), outputs=generating_type)
                 mvr_tab.select(fn=set_generating_type, inputs=gr.Text(mvr_tab.label, visible=False), outputs=generating_type)
                 text_tab.select(fn=set_generating_type, inputs=gr.Text(text_tab.label, visible=False), outputs=generating_type)
-                    
+        
+        descriptions.append(uncond_tab)
+        descriptions.append(pc_tab)
+        descriptions.append(sketch_tab)
+        descriptions.append(text_tab)
+        descriptions.append(svr_tab)
+        descriptions.append(mvr_tab)
+        descriptions.append(mvr_notification)
+        descriptions.append(uncond_button)
+        descriptions.append(pc_button)
+        descriptions.append(sketch_button)
+        descriptions.append(text_button)
+        descriptions.append(svr_button)
+        descriptions.append(mvr_button)
+        
+                  
         # Output demonstration 
         with gr.Column() as output_col:        
             with gr.Tabs():
@@ -369,7 +481,6 @@ with gr.Blocks(js=force_light, theme=theme, css=custom_css) as inference:
                     step_file.render()
                     download_files.render()
                     
-            
             
             model_index = gr.Number(value=0, visible=False)
             with gr.Row() as switch_row:
@@ -384,7 +495,13 @@ with gr.Blocks(js=force_light, theme=theme, css=custom_css) as inference:
                 fn=switch_model,
                 inputs=[user_state, generating_type, model_index, gr.Number(1, visible=False)],
                 outputs=[model_index, model_wireframe, model_solid, download_files])
-                
+        
+        descriptions.append(last_button)      
+        descriptions.append(next_button)      
+        descriptions.append(solid_tab)      
+        descriptions.append(wireframe_tab)      
+        descriptions.append(download_tab)  
+            
     # Examples
     @gr.render(inputs=[generating_type], triggers=[generating_type.change, inference.load])
     def show_examples(generate_mode):
@@ -461,26 +578,9 @@ with gr.Blocks(js=force_light, theme=theme, css=custom_css) as inference:
                                 ],
                             label=f"Example{i+1}"
                         )
-    gr.Markdown(
-        value=
-        """
-        <h2>Citation</h2>
-        
-        If our work is helpful for your research or applications, please cite us via:
-        <br>
-        ```
-        @article{HolaBRep25,
-        title={HoLa: B-Rep Generation using a Holistic Latent Representation},
-        author={Yilin Liu and Duoteng Xu and Xinyao Yu and Xiang Xu and Daniel Cohen-Or and Hao Zhang and Hui Huang},
-        journal={ACM Transactions on Graphics (Proceedings of SIGGRAPH)},
-        volume={44},
-        number={4},
-        year={2025},
-        }
-        ```
-        """,
-        height=300,
-        )
+                        
+    citation_en.render()
+    descriptions.append(citation_en)
                 
 
 if __name__ == "__main__":

@@ -1,7 +1,6 @@
 import os
 import shutil
 import subprocess
-import random
 import uuid
 import gradio as gr
 
@@ -12,7 +11,7 @@ from app.inference import inference_batch_postprocess
 
 # Should be refactored in the future
 class UncondGeneratingMethod():
-    def __init__(self, output_main_dir=Path('/data/outputs')):
+    def __init__(self, output_main_dir=Path('./outputs')):
         self.output_main_dir = output_main_dir
 
     def generate(self):

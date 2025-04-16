@@ -26,7 +26,7 @@ class ConditionedGeneratingMethod():
         dataprocessor: DataProcessor, 
         model_num_to_return: int,
         model_seed: int = 0,
-        output_main_dir: Path | str = Path('/data/outputs')
+        output_main_dir: Path | str = Path('./outputs')
         ):
         self.director = model_building_director
         self.dataprocessor = dataprocessor
