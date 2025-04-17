@@ -1,4 +1,3 @@
-
 import os
 import shutil
 import uuid
@@ -132,7 +131,7 @@ class ConditionedGeneratingMethod():
 
                             # Check for 'success.txt' in output folders
                             for done_folder in postprocess_output_dir.iterdir():
-                                output_files = os.listdir(postprocess_output_dir / done_folder)
+                                output_files = os.listdir(done_folder)
                                 if 'success.txt' in output_files:
                                     success_count += 1
 

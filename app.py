@@ -1,4 +1,6 @@
 #Frontend
+import sys
+sys.path.insert(0, "/data")
 import gradio as gr
 from pathlib import Path
 import os
@@ -123,7 +125,7 @@ def switch_model(user_state: dict, generate_mode: str,  model_index: int, offset
     
     wireframe_model = user_state[generate_mode][model_index][WIREFRAME_FILE]
     solid_model = user_state[generate_mode][model_index][SOLID_FILE]
-    if not os.path.exists(wireframe_model) or os.path.exists(solid_model):
+    if not (os.path.exists(wireframe_model) and os.path.exists(solid_model)):
         gr.Warning("The operation is too frequent!", title="Frequent Operation")
         return gr.update(), gr.update(), gr.update(), gr.update()
     return model_index, gr.Model3D(wireframe_model, label=f'Wireframe{model_index + 1}'), gr.Model3D(solid_model, label=f'Solid{model_index + 1}'), gr.Files(user_state[generate_mode][model_index], label=f'Models{model_index + 1}', interactive=False)
@@ -141,6 +143,7 @@ def make_Chinese_descriptions():
             TextLayout().get_Chinese_note(), 
             SVRLayout().get_Chinese_note(), 
             MVRLayout().get_Chinese_note(),
+            notification_mvr_cn,
             gr.update(label="无条件"),
             gr.update(label="点云"),
             gr.update(label="草图"),
@@ -171,6 +174,7 @@ def make_English_descriptions():
             TextLayout().get_English_note(), 
             SVRLayout().get_English_note(), 
             MVRLayout().get_English_note(),
+            notification_mvr_en,
             gr.update(label="Unconditional"),
             gr.update(label="Point Cloud"),
             gr.update(label="Sketch"),
@@ -329,6 +333,9 @@ citation_cn = gr.Markdown(
         height=300,
         )
 
+notification_mvr_en = gr.Markdown("**You can take and upload photos of objects as shown below.**")
+notification_mvr_cn = gr.Markdown("**您可以按如下方式拍摄并上传物体照片**")
+
 descriptions = []
 
 # Main body
@@ -437,7 +444,8 @@ with gr.Blocks(js=force_light, theme=theme, css=custom_css) as inference:
                     mvr_description = mvr_layout.get_English_note()
                     descriptions.append(mvr_description)
                     with gr.Accordion("MVR input notification:", open=False) as mvr_notification:
-                        gr.Image(value='app\examples\mvr.jpg',show_download_button=False, show_label=False,show_share_button=False,interactive=False)
+                        notification_mvr_en.render()
+                        gr.Image(value='app\examples\mvr.png',show_download_button=False, show_label=False,show_share_button=False,interactive=False)
 
                     with gr.Row():
                         mvr_input_components = mvr_layout.get_input_components()
@@ -455,6 +463,7 @@ with gr.Blocks(js=force_light, theme=theme, css=custom_css) as inference:
                 mvr_tab.select(fn=set_generating_type, inputs=gr.Text(mvr_tab.label, visible=False), outputs=generating_type)
                 text_tab.select(fn=set_generating_type, inputs=gr.Text(text_tab.label, visible=False), outputs=generating_type)
         
+        descriptions.append(notification_mvr_en)
         descriptions.append(uncond_tab)
         descriptions.append(pc_tab)
         descriptions.append(sketch_tab)
@@ -584,4 +593,4 @@ with gr.Blocks(js=force_light, theme=theme, css=custom_css) as inference:
                 
 
 if __name__ == "__main__":
-    inference.launch(allowed_paths=['/data/outputs'], server_port=7860)
+    inference.launch(allowed_paths=['/data'], server_port=7860)

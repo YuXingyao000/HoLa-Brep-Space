@@ -52,7 +52,7 @@ def inference_batch_postprocess(file_dir: Path ,output_dir: Path, num_cpus: int=
                 time.sleep(0.2)
                 # Check for 'success.txt' in output folders
                 for done_folder in Path(output_dir).iterdir():
-                    output_files = os.listdir(Path(output_dir) / done_folder)
+                    output_files = os.listdir(done_folder)
                     if 'success.txt' in output_files:
                         success_count += 1
                         

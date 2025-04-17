@@ -48,7 +48,7 @@ RUN conda env create -f environment.yml
 RUN useradd -m -u 1000 user
 USER user
 ENV HOME="/home/user"
-ENV	PATH="/home/user/.local/bin:${PATH}"
+ENV PYTHONPATH="/home/user/HoLa-Brep:/data:${PYTHONPATH}"
 EXPOSE 7860
 ENV GRADIO_SERVER_NAME="0.0.0.0"
 WORKDIR ${HOME}/HoLa-Brep
